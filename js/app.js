@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124200156";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124200156";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124200156";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124200847";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124200847";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124200847";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -500,19 +500,23 @@ function toastDesfazer(t) {
   toastTimer = setTimeout(() => sumir(d), 5000);
 }
 
-function folhaData(atual, escolher) {
+// Calendário no visual do app (substitui o seletor de data do sistema).
+// op: titulo, min, max (padrão: hoje; null = sem limite), dica, voltar (fechar volta para a folha anterior), usar (texto do botão)
+function folhaData(atual, escolher, op = {}) {
+  const max = op.max === undefined ? hoje() : op.max, min = op.min || null;
   let ref = atual.slice(0, 7); let sel = atual;
   const desenha = f => {
     const [a, m] = ref.split("-").map(Number); const pri = iso(new Date(a, m - 1, 1)); const ult = new Date(a, m, 0).getDate(); const h = hoje();
     const off = (data(pri).getDay() - estado.ajustes.semanaInicio + 7) % 7;
     let g = `<div class="mes">${letrasSemana().map(l => `<span class="ds">${l}</span>`).join("")}`; for (let i = 0; i < off; i++) g += "<span></span>";
     for (let d = 1; d <= ult; d++) { const dt = iso(new Date(a, m - 1, d)); const tem = treinosDoDia(dt).length;
-      g += `<button class="dia ${dt > h ? "f" : ""}" ${dt > h ? "disabled" : ""} style="${dt === sel ? "background:#fff;color:#111;font-weight:600" : tem ? "background:rgba(255,255,255,.22);color:#fff" : "background:var(--sup2)"}" data-d="${dt}">${d}</button>`; }
+      const fora = (max && dt > max) || (min && dt < min);
+      g += `<button class="dia ${fora ? "f" : ""}" ${fora ? "disabled" : ""} style="${dt === sel ? "background:#fff;color:#111;font-weight:600" : tem ? "background:rgba(255,255,255,.22);color:#fff" : "background:var(--sup2)"}" data-d="${dt}">${d}</button>`; }
     g += "</div>";
-    f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab("Quando foi?")}
+    f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab(op.titulo || "Quando foi?")}
       <div class="mes-nav"><b style="font-size:15px">${mesLongo(a, m - 1)} ${a}</b><div style="display:flex;gap:8px"><button class="fechar" data-n="-1">${ic("seta-esq", .7)}</button><button class="fechar" data-n="1">${ic("seta-dir", .7)}</button></div></div>${g}
-      <div class="dica">Dias futuros não podem ser escolhidos.</div><button class="pilula" data-usar>Usar ${comDia(sel).toLowerCase()}</button>`;
-    f.querySelector("[data-fechar]").onclick = () => fecharFolha();
+      ${op.dica === "" ? "" : `<div class="dica">${op.dica || "Dias futuros não podem ser escolhidos."}</div>`}<button class="pilula" data-usar>${op.usar || "Usar"} ${curtaAno(sel)}</button>`;
+    f.querySelector("[data-fechar]").onclick = () => op.voltar ? op.voltar() : fecharFolha();
     f.querySelectorAll("[data-d]").forEach(b => b.onclick = () => { sel = b.dataset.d; desenha(f); });
     f.querySelectorAll("[data-n]").forEach(b => b.onclick = () => { const d = new Date(a, m - 1 + +b.dataset.n, 1); ref = iso(d).slice(0, 7); desenha(f); });
     f.querySelector("[data-usar]").onclick = () => escolher(sel);
@@ -532,10 +536,10 @@ function prazosRapidos(inicio) {
   const anoFim = d.getFullYear() + "-12-31", ano = difDias(inicio, anoFim) < 14 || anoFim === mes ? (d.getFullYear() + 1) + "-12-31" : anoFim;
   return [["Fim do mês", mes], ["3 meses", tres], ["Fim do ano", ano]];
 }
-function folhaMeta(meta) {
+function folhaMeta(meta, rascunho) {
   const ed = !!meta;
-  const m = meta ? { ...meta } : { id: novoId(), nome: "", alvo: 0, inicio: hoje(), prazo: "", contar: "todos", status: "ativa" };
-  if (!ed) { m.prazo = prazosRapidos(m.inicio)[2][1]; m.alvo = Math.max(1, Math.ceil(3 * semanasMeta(m) - 0.05)); }
+  const m = rascunho || (meta ? { ...meta } : { id: novoId(), nome: "", alvo: 0, inicio: hoje(), prazo: "", contar: "todos", status: "ativa" });
+  if (!ed && !rascunho) { m.prazo = prazosRapidos(m.inicio)[2][1]; m.alvo = Math.max(1, Math.ceil(3 * semanasMeta(m) - 0.05)); }
   const totalPara = v => Math.max(1, Math.ceil(v * semanasMeta(m) - 0.05)); // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
   const desenha = f => {
     const rapidos = prazosRapidos(m.inicio);
@@ -544,11 +548,11 @@ function folhaMeta(meta) {
       <div class="campo"><label>Nome</label><input data-c="nome" value="${esc(m.nome)}" placeholder="Ex.: Fim do ano"></div>
       <div class="campo"><label>Prazo</label>
         <div class="chips" style="margin-top:4px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
-        <input data-c="prazo" type="date" value="${m.prazo}" style="margin-top:6px"></div>
+        <button class="campo-data" data-data="prazo">${ic("calendario", .75)}${curtaAno(m.prazo)}</button></div>
       <div class="campo"><label>Quantas vezes por semana?</label>
         <div class="chips" style="margin-top:4px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
       <div class="dupla"><div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
-      <div class="campo"><label>Início</label><input data-c="inicio" type="date" value="${m.inicio}"></div></div>
+      <div class="campo"><label>Início</label><button class="campo-data" data-data="inicio">${ic("calendario", .75)}${curtaAno(m.inicio)}</button></div></div>
       <div class="ritmo-vivo"><span class="rv-n"></span><span class="rv-t">por semana</span><span class="rv-selo"></span></div>
       <div class="campo"><label>Contar</label><div class="chips" style="margin-top:4px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
       <button class="pilula" data-salvar>${ed ? "Salvar alterações" : "Salvar meta"}</button>`;
@@ -569,6 +573,13 @@ function folhaMeta(meta) {
       const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); // se veio de uma frequência, mantém a frequência
       m[k] = i.value; if (fq) m.alvo = totalPara(fq);
       desenha(f);
+    });
+    // datas: abrem o calendário do app; ao escolher (ou fechar) volta para esta folha com tudo preenchido
+    f.querySelectorAll("[data-data]").forEach(b => b.onclick = () => {
+      const k = b.dataset.data, volta = () => folhaMeta(meta, m);
+      folhaData(m[k], d => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m[k] = d; if (fq) m.alvo = totalPara(fq); volta(); },
+        k === "prazo" ? { titulo: "Prazo", min: somaDias(m.inicio, 1), max: null, dica: "", voltar: volta }
+                      : { titulo: "Início", max: somaDias(m.prazo, -1), dica: "", voltar: volta });
     });
     f.querySelectorAll("[data-prazo]").forEach(b => b.onclick = () => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m.prazo = b.dataset.prazo; if (fq) m.alvo = totalPara(fq); desenha(f); });
     f.querySelectorAll("[data-freq]").forEach(b => b.onclick = () => { m.alvo = totalPara(+b.dataset.freq); desenha(f); });
