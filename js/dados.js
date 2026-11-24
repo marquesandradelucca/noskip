@@ -28,8 +28,20 @@ function carregar() {
   } catch (e) { return padrao(); }
 }
 
-export function salvar() {
+// salvarLocal: só grava no aparelho (usado quando os dados chegam da nuvem).
+// salvar: grava e avisa a sincronização que algo mudou aqui.
+export function salvarLocal() {
   try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) {}
+}
+const _aoSalvar = [];
+export function aoSalvar(fn) { _aoSalvar.push(fn); }
+export function salvar() {
+  salvarLocal();
+  _aoSalvar.forEach(fn => { try { fn(); } catch (e) {} });
+}
+// Apaga os dados do aparelho (ao sair da conta): a cópia fica na nuvem.
+export function limparLocal() {
+  const p = padrao(); for (const k of Object.keys(estado)) delete estado[k]; Object.assign(estado, p); salvarLocal();
 }
 
 export function novoId() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }

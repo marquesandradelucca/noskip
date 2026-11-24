@@ -1,7 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124180618";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124180618";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124182135";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124182135";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124182135";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -22,6 +23,7 @@ const gradDet = r => "det-" + r.est;
 // ---------- render principal ----------
 // anim: "push" (abre tela), "pop" (volta), "esq"/"dir" (troca de aba), "fade"
 function render(anim) {
+  if (!situacao().logado) { app.innerHTML = telaEntrada(); ligaEntrada(); return; }
   if (ui.detalhe) { const m = estado.metas.find(x => x.id === ui.detalhe); if (m) { app.innerHTML = telaDetalhe(m); animar(anim); return; } ui.detalhe = null; }
   const t = ui.aba === "home" ? telaHome() : ui.aba === "cal" ? telaCal() : telaConq();
   app.innerHTML = t + abas();
@@ -581,12 +583,13 @@ function folhaAjustes() {
     ${l("coringas", "Coringas", Math.min(2, a.coringasPorMes) + " por mês")}
     ${l("faixas", "Faixas de sequência", `Acendendo 1–${a.faixas.acendendo} · Aquecida ${a.faixas.acendendo + 1}–${a.faixas.aquecida} · Em chamas ${a.faixas.aquecida + 1}+`)}
     ${l("semana", "Semana começa em", a.semanaInicio === 0 ? "Domingo" : "Segunda")}
-    <div class="linha" style="opacity:.6"><span class="tx"><span class="t1">Sincronizar</span><span class="t2">Supabase · em breve</span></span></div>`, f => {
+    ${l("conta", "Conta", esc(situacao().email || "") + " · " + textoSync())}`, f => {
     const on = (k, fn) => f.querySelector(`[data-a="${k}"]`).onclick = fn;
     on("metas", folhaMetas);
     on("coringas", () => folhaNumero("Coringas", "Cada coringa protege uma semana sem treino: a sequência não quebra, mas também não sobe. Nunca cobre duas semanas seguidas.", Math.min(2, a.coringasPorMes), 0, 2, v => { a.coringasPorMes = v; }));
     on("faixas", folhaFaixas);
     on("semana", folhaSemana);
+    on("conta", folhaConta);
   });
 }
 
@@ -672,6 +675,73 @@ function toastInfo(txt) {
   const d = document.createElement("div"); d.className = "toast"; d.innerHTML = `<span>${txt}</span>`;
   document.body.appendChild(d); clearTimeout(toastTimer); toastTimer = setTimeout(() => sumir(d), 2500);
 }
+
+// ---------- conta (Supabase) ----------
+let modoEntrada = "entrar";
+function telaEntrada() {
+  const criar = modoEntrada === "criar"; const s = situacao();
+  const aviso = s.erro && /sessão expirou/i.test(s.erro) ? s.erro : "";
+  return `<section class="tela entrada"><div class="cab"><div class="titulo">NoSkip</div></div>
+    <form class="card-meta grad entrada-card" style="${G("primeira")};color:#0B1729" novalidate>
+      <div class="entrada-txt"><h2>${criar ? "Criar conta" : "Entrar"}</h2><p>${criar ? "Seus treinos ficam salvos na nuvem e aparecem em qualquer aparelho." : "Use a mesma conta do Ice Cream Lab, ou crie uma nova."}</p></div>
+      <div class="entrada-campos">
+        <input id="e-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" placeholder="E-mail" aria-label="E-mail">
+        <input id="e-senha" type="password" autocomplete="${criar ? "new-password" : "current-password"}" placeholder="Senha${criar ? " (mínimo 6 caracteres)" : ""}" aria-label="Senha">
+        ${criar ? '<input id="e-senha2" type="password" autocomplete="new-password" placeholder="Repita a senha" aria-label="Repita a senha">' : ""}
+      </div>
+      <div class="entrada-erro" ${aviso ? "" : "hidden"}>${esc(aviso)}</div>
+      <button type="submit" class="pilula entrada-ok">${criar ? "Criar conta" : "Entrar"}</button>
+    </form>
+    <button type="button" class="entrada-troca" data-troca>${criar ? "Já tenho conta · Entrar" : "Não tem conta? Criar conta"}</button></section>`;
+}
+function ligaEntrada() {
+  const f = app.querySelector(".entrada-card"); const erro = f.querySelector(".entrada-erro");
+  const mostra = t => { erro.textContent = t; erro.hidden = false; };
+  app.querySelector("[data-troca]").onclick = () => { modoEntrada = modoEntrada === "criar" ? "entrar" : "criar"; render(); };
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const email = f.querySelector("#e-email").value.trim(), senha = f.querySelector("#e-senha").value, s2 = f.querySelector("#e-senha2");
+    if (!email) { f.querySelector("#e-email").focus(); return; }
+    if (senha.length < 6) { mostra("A senha precisa ter pelo menos 6 caracteres."); return; }
+    if (s2 && s2.value !== senha) { mostra("As senhas não são iguais."); s2.value = ""; s2.focus(); return; }
+    const b = f.querySelector(".entrada-ok"); b.disabled = true; b.textContent = "Aguarde…";
+    try { if (modoEntrada === "criar") await criarConta(email, senha); else await entrar(email, senha); }
+    catch (e) { mostra(e.message); b.disabled = false; b.textContent = modoEntrada === "criar" ? "Criar conta" : "Entrar"; }
+  };
+}
+function textoSync() {
+  const s = situacao();
+  if (s.sincronizando) return "sincronizando…";
+  if (!s.online) return s.pendentes ? "sem internet · " + s.pendentes + " para enviar" : "sem internet";
+  if (s.erro) return "erro ao sincronizar";
+  if (!s.ultima) return "ainda não sincronizado";
+  const min = Math.round((Date.now() - new Date(s.ultima)) / 60000);
+  return min < 1 ? "sincronizado agora" : min < 60 ? "sincronizado há " + min + " min" : "sincronizado " + curta(s.ultima.slice(0, 10));
+}
+function folhaConta() {
+  const desenha = f => {
+    const s = situacao();
+    f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab("Conta")}
+      <div class="linha"><span class="tx"><span class="t1">${esc(s.email || "")}</span><span class="t2">${textoSync()}</span></span></div>
+      ${s.erro ? `<div class="dica" style="color:var(--rosa)">${esc(s.erro)}</div>` : '<div class="dica">Seus dados ficam salvos na nuvem e sincronizam sozinhos ao abrir o app e a cada mudança.</div>'}
+      <button class="pilula escura" data-sync ${s.sincronizando ? "disabled" : ""}>Sincronizar agora</button>
+      <button class="linha" data-sair><span class="tx"><span class="t1 verm">Sair da conta</span><span class="t2">os dados saem deste aparelho e continuam na nuvem</span></span></button>`;
+    f.querySelector("[data-fechar]").onclick = () => fecharFolha();
+    f.querySelector("[data-sync]").onclick = async () => { await sincroniza(); desenha(f); };
+    f.querySelector("[data-sair]").onclick = async () => {
+      try { await sair(); fecharFolha(true); modoEntrada = "entrar"; render(); } catch (e) { toastInfo(esc(e.message)); }
+    };
+  };
+  abrirFolha("", desenha);
+}
+// login, logout ou dados chegando de outro aparelho: redesenha (se não houver folha aberta por cima)
+let _logado = situacao().logado;
+aoMudar((s, chegou) => {
+  const trocou = s.logado !== _logado; _logado = s.logado;
+  if (trocou) { fecharFolha(true); ui.detalhe = null; render(); return; }
+  if (chegou && !camada.querySelector(".folha")) render();
+});
+iniciaSync();
 
 // atualiza ao virar o dia / voltar ao app
 document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
