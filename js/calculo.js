@@ -1,5 +1,5 @@
 // Contas do NoSkip: progresso das metas, ritmo, projeção, sequência semanal e marcos.
-import { estado, hoje, data, iso, somaDias, difDias, inicioSemana } from "./dados.js?v=20261124200847";
+import { estado, hoje, data, iso, somaDias, difDias, inicioSemana } from "./dados.js?v=20261124201653";
 
 function diasUteis(m, de, ate) { // dias entre de e ate (inclusive)
   return ate < de ? 0 : difDias(de, ate) + 1;
@@ -16,6 +16,12 @@ export function feitosNaMeta(m, ate) {
 // Tudo o que as telas precisam saber de uma meta.
 export function resumo(m) {
   const h = hoje();
+  // meta agendada (começa no futuro): ainda não conta nada; mostra só quando começa e o ritmo previsto
+  if (h < m.inicio) {
+    const totais = Math.max(1, diasUteis(m, m.inicio, m.prazo));
+    return { feitos: 0, faltam: m.alvo, totais, decorridos: 0, restantes: totais, faltasLivres: Math.max(0, totais - m.alvo), ritmo: m.alvo / (totais / 7),
+      ideal: 0, dif: 0, proj: 0, est: "agendada", encerrou: false, diasPrazo: difDias(h, m.prazo), diasInicio: difDias(h, m.inicio) };
+  }
   const feitos = feitosNaMeta(m, h < m.prazo ? h : m.prazo);
   const faltam = Math.max(0, m.alvo - feitos);
   const totais = Math.max(1, diasUteis(m, m.inicio, m.prazo));
@@ -38,10 +44,11 @@ export function resumo(m) {
   return { feitos, faltam, totais, decorridos, restantes, faltasLivres, ritmo, ideal, dif, proj, est, encerrou, diasPrazo };
 }
 
-export const NOMES_ESTADO = { afrente: "à frente", noritmo: "No ritmo", apertado: "Apertado", batida: "Meta batida" };
+export const NOMES_ESTADO = { afrente: "à frente", noritmo: "No ritmo", apertado: "Apertado", batida: "Meta batida", agendada: "Agendada" };
 
 export function linhaStatus(m, r) {
   if (r.est === "batida") return "Batida · " + m.alvo + " de " + m.alvo;
+  if (r.est === "agendada") return "Começa " + (r.diasInicio === 1 ? "amanhã" : "em " + r.diasInicio + " dias") + " · ≈ " + r.ritmo.toFixed(1).replace(".", ",") + " por semana";
   const d = Math.round(Math.abs(r.dif));
   const ini = r.est === "afrente" ? "▲ " + d + " à frente" : r.est === "apertado" ? "▼ " + Math.max(1, d) + " atrás" : "● No ritmo";
   return ini + " · " + r.faltasLivres + " faltas livres · " + r.diasPrazo + " dias";

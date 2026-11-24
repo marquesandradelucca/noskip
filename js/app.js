@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124200847";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124200847";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124200847";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124201653";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124201653";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124201653";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -42,7 +42,7 @@ const EASE = "cubic-bezier(.32,.72,0,1)";
 function alvoTela() { const r = app.getBoundingClientRect(); return { left: r.left, top: 0, width: r.width, height: innerHeight, radius: 0 }; }
 function camadaGrad(img, r, raio) {
   const c = document.createElement("div"); c.className = "expande";
-  Object.assign(c.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", borderRadius: raio + "px", backgroundImage: `url(img/grad/${img}.jpg)` });
+  Object.assign(c.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px", borderRadius: raio + "px", backgroundImage: /agendada/.test(img) ? "none" : `url(img/grad/${img}.jpg)`, backgroundColor: /agendada/.test(img) ? "#000" : "" });
   document.body.appendChild(c); return c;
 }
 function entradaEmOndas() {
@@ -101,7 +101,8 @@ function abas() {
 
 // ---------- Home ----------
 function telaHome() {
-  const metas = metasAtivas();
+  const ag = m => hoje() < m.inicio;
+  const metas = metasAtivas().sort((a, b) => (ag(a) - ag(b)) || (ag(a) ? a.inicio.localeCompare(b.inicio) : 0) || a.ordem - b.ordem);
   let h = `<section class="tela"><div class="cab"><div class="titulo">NoSkip</div><button class="btn-redondo" data-acao="ajustes" aria-label="Ajustes">${ic("ajustes")}</button></div>`;
   if (!metas.length) {
     h += `<div class="card card-meta primeira-meta" data-acao="nova-meta">
@@ -118,13 +119,17 @@ function telaHome() {
   else if (hj.length >= 2) botao = `<button class="pilula escura" disabled>${ic("check", .9)}Treinou hoje · bônus feito</button>`;
   else if (hj.length === 1) botao = `<button class="pilula escura" data-acao="checkin">${ic("check", .9)}Treinou hoje ·<span class="ic-in">${ic("estrela", .7)}bônus</span></button>`;
   else botao = `<button class="pilula" data-acao="checkin">${ic("mais", .9)}Check-in</button>`;
-  h += `<div class="card-meta grad" style="${G(gradMeta(r))}" data-meta="${m.id}">
+  h += r.est === "agendada" ? `<div class="card card-meta agendada" data-meta="${m.id}"><div class="nome">${esc(m.nome)}</div><div class="selo">Agendada · ${curta(m.inicio)}</div>
+    <div class="placar"><span class="n">0</span><span class="d">/${m.alvo}</span></div>
+    <div class="status">${linhaStatus(m, r)}</div>${botao}</div>` : `<div class="card-meta grad" style="${G(gradMeta(r))}" data-meta="${m.id}">
     <div class="nome sombra-txt">${esc(m.nome)}</div>${r.est === "batida" ? '<div class="selo">Meta batida</div>' : ""}
     <div class="placar"><span class="n">${r.feitos}</span><span class="d sombra-txt">/${m.alvo}</span></div>
     <div class="status sombra-txt">${linhaStatus(m, r)}</div>${botao}</div>`;
   h += cardSemana();
   h += `<div class="grade2">`;
-  for (const o of metas.slice(1)) { const ro = resumo(o); h += `<div class="tile grad" style="${G(gradMeta(ro))}" data-meta="${o.id}"><div class="nome sombra-txt">${esc(o.nome)}</div><div class="placar"><span class="n">${ro.feitos}</span><span class="d">/${o.alvo}</span></div></div>`; }
+  for (const o of metas.slice(1)) { const ro = resumo(o);
+    if (ro.est === "agendada") { h += `<div class="tile agendada" data-meta="${o.id}"><div class="nome">${esc(o.nome)}</div><div class="quando">começa ${curta(o.inicio)}</div><div class="placar"><span class="n">0</span><span class="d">/${o.alvo}</span></div></div>`; continue; }
+    h += `<div class="tile grad" style="${G(gradMeta(ro))}" data-meta="${o.id}"><div class="nome sombra-txt">${esc(o.nome)}</div><div class="placar"><span class="n">${ro.feitos}</span><span class="d">/${o.alvo}</span></div></div>`; }
   h += `<button class="tile novo" data-acao="nova-meta">${ic("mais", 1.6)}<span style="font-size:13px;font-weight:500">Nova meta</span></button></div></section>`;
   return h;
 }
@@ -159,6 +164,18 @@ function checaPrazos() {
 // ---------- Detalhe ----------
 function telaDetalhe(m) {
   const r = resumo(m);
+  if (r.est === "agendada") return `<section class="tela detalhe agendada" style="padding-bottom:calc(var(--seguro-b) + 32px)">
+  <div class="cab"><button class="btn-redondo" data-acao="voltar" aria-label="Voltar">${ic("seta-esq")}</button><button class="btn-redondo" data-acao="acoes" data-id="${m.id}" aria-label="Mais">${ic("ajustes")}</button></div>
+  <div class="titulo">${esc(m.nome)}</div>
+  <div class="placar" style="margin:0 0 4px"><span class="n">0</span><span class="d">/${m.alvo}</span><span class="status" style="margin:0 0 14px auto;white-space:nowrap">Agendada</span></div>
+  <div class="grade3">
+    <div class="card"><div class="v">${r.diasInicio}</div><div class="l">${r.diasInicio === 1 ? "dia para começar" : "dias para começar"}</div></div>
+    <div class="card"><div class="v">${r.totais}</div><div class="l">dias de meta</div></div>
+    <div class="card"><div class="v">${r.ritmo.toFixed(1).replace(".", ",")}</div><div class="l">por semana</div></div>
+  </div>
+  <div class="card"><h3 style="font-size:15px;font-weight:600;margin-bottom:6px">De ${curtaAno(m.inicio)} a ${curtaAno(m.prazo)}</h3>
+    <div class="dica" style="margin:0">Os treinos contam a partir do primeiro dia. Ritmo, folga e gráficos aparecem quando a meta começar.</div></div>
+  </section>`;
   const st = linhaStatus(m, r).split(" · ")[0];
   const pct = Math.min(100, Math.round(r.feitos / m.alvo * 100));
   return `<section class="tela detalhe" style="padding-bottom:calc(var(--seguro-b) + 32px)"><div class="fundo grad" style="${G(gradDet(r))}"></div>
@@ -529,6 +546,10 @@ function folhaData(atual, escolher, op = {}) {
 // e o app calcula o total (que continua editável). O ritmo aparece ao vivo, com um selo de referência.
 function semanasMeta(m) { return Math.max(1, (difDias(m.inicio, m.prazo) + 1) / 7); }
 function seloRitmo(r) { return r <= 2.5 ? "leve" : r <= 4.5 ? "realista" : r <= 6 ? "puxado" : "muito puxado"; }
+function iniciosRapidos() {
+  const d = data(hoje());
+  return [["Hoje", hoje()], ["Próximo mês", iso(new Date(d.getFullYear(), d.getMonth() + 1, 1))], ["Próximo ano", (d.getFullYear() + 1) + "-01-01"]];
+}
 function prazosRapidos(inicio) {
   const d = data(inicio), fimMes = m => iso(new Date(d.getFullYear(), d.getMonth() + m, 0));
   const mes = difDias(inicio, fimMes(1)) < 3 ? fimMes(2) : fimMes(1);           // nos últimos dias do mês, usa o próximo
@@ -546,13 +567,15 @@ function folhaMeta(meta, rascunho) {
     const freqAtual = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
     f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab(ed ? "Editar meta" : "Nova meta")}
       <div class="campo"><label>Nome</label><input data-c="nome" value="${esc(m.nome)}" placeholder="Ex.: Fim do ano"></div>
-      <div class="campo"><label>Prazo</label>
+      <div class="campo"><label>Começa</label>
+        <div class="chips" style="margin-top:4px">${iniciosRapidos().map(([n, v]) => `<button class="chip ${m.inicio === v ? "on" : ""}" data-inicio="${v}">${n}</button>`).join("")}</div>
+        <button class="campo-data" data-data="inicio">${ic("calendario", .75)}${curtaAno(m.inicio)}</button></div>
+      <div class="campo"><label>Termina</label>
         <div class="chips" style="margin-top:4px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
         <button class="campo-data" data-data="prazo">${ic("calendario", .75)}${curtaAno(m.prazo)}</button></div>
       <div class="campo"><label>Quantas vezes por semana?</label>
         <div class="chips" style="margin-top:4px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
-      <div class="dupla"><div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
-      <div class="campo"><label>Início</label><button class="campo-data" data-data="inicio">${ic("calendario", .75)}${curtaAno(m.inicio)}</button></div></div>
+      <div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
       <div class="ritmo-vivo"><span class="rv-n"></span><span class="rv-t">por semana</span><span class="rv-selo"></span></div>
       <div class="campo"><label>Contar</label><div class="chips" style="margin-top:4px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
       <button class="pilula" data-salvar>${ed ? "Salvar alterações" : "Salvar meta"}</button>`;
@@ -577,10 +600,18 @@ function folhaMeta(meta, rascunho) {
     // datas: abrem o calendário do app; ao escolher (ou fechar) volta para esta folha com tudo preenchido
     f.querySelectorAll("[data-data]").forEach(b => b.onclick = () => {
       const k = b.dataset.data, volta = () => folhaMeta(meta, m);
-      folhaData(m[k], d => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m[k] = d; if (fq) m.alvo = totalPara(fq); volta(); },
-        k === "prazo" ? { titulo: "Prazo", min: somaDias(m.inicio, 1), max: null, dica: "", voltar: volta }
-                      : { titulo: "Início", max: somaDias(m.prazo, -1), dica: "", voltar: volta });
+      if (k === "inicio") { folhaData(m.inicio, d => { mudaInicio(d); volta(); }, { titulo: "Começa", max: null, dica: "", voltar: volta }); return; }
+      folhaData(m.prazo, d => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m.prazo = d; if (fq) m.alvo = totalPara(fq); volta(); },
+        { titulo: "Termina", min: somaDias(m.inicio, 1), max: null, dica: "", voltar: volta });
     });
+    const mudaInicio = novo => {
+      const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
+      const iq = prazosRapidos(m.inicio).findIndex(([, v]) => v === m.prazo); // o prazo era um atalho? mantém o mesmo atalho
+      m.inicio = novo;
+      if (iq >= 0) m.prazo = prazosRapidos(novo)[iq][1]; else if (m.prazo <= novo) m.prazo = prazosRapidos(novo)[2][1];
+      if (fq) m.alvo = totalPara(fq);
+    };
+    f.querySelectorAll("[data-inicio]").forEach(b => b.onclick = () => { mudaInicio(b.dataset.inicio); desenha(f); });
     f.querySelectorAll("[data-prazo]").forEach(b => b.onclick = () => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m.prazo = b.dataset.prazo; if (fq) m.alvo = totalPara(fq); desenha(f); });
     f.querySelectorAll("[data-freq]").forEach(b => b.onclick = () => { m.alvo = totalPara(+b.dataset.freq); desenha(f); });
     f.querySelectorAll("[data-contar]").forEach(b => b.onclick = () => { m.contar = b.dataset.contar; desenha(f); });
@@ -642,7 +673,7 @@ function folhaAjustes() {
 
 function folhaMetas() {
   const ms = metasAtivas(); const enc = estado.metas.filter(m => m.status === "encerrada");
-  abrirFolha(`${cab("Metas")}${[...ms, ...enc].map(m => { const r = resumo(m); return `<button class="linha" data-id="${m.id}"><span class="amostra" style="${G(gradMeta(r))}"></span><span class="tx"><span class="t1">${esc(m.nome)}</span><span class="t2">${r.feitos} de ${m.alvo} · ${m.status === "encerrada" ? "encerrada" : r.est === "batida" ? "meta batida" : "até " + curta(m.prazo)}</span></span><span class="seta">›</span></button>`; }).join("")}
+  abrirFolha(`${cab("Metas")}${[...ms, ...enc].map(m => { const r = resumo(m); return `<button class="linha" data-id="${m.id}"><span class="amostra" style="${r.est === "agendada" ? "background:var(--s3)" : G(gradMeta(r))}"></span><span class="tx"><span class="t1">${esc(m.nome)}</span><span class="t2">${r.feitos} de ${m.alvo} · ${m.status === "encerrada" ? "encerrada" : r.est === "batida" ? "meta batida" : r.est === "agendada" ? "começa " + curta(m.inicio) : "até " + curta(m.prazo)}</span></span><span class="seta">›</span></button>`; }).join("")}
     <button class="add-dia" data-nova>${ic("mais", .8)}Nova meta</button><div class="dica">Toque numa meta para editar.</div>`, f => {
     f.querySelectorAll("[data-id]").forEach(b => b.onclick = () => folhaMeta(estado.metas.find(m => m.id === b.dataset.id)));
     f.querySelector("[data-nova]").onclick = () => folhaMeta();
