@@ -402,3 +402,5 @@ body{overflow-x:hidden}
 .entrada .entrada-ok:disabled{opacity:.6}
 .entrada-troca{margin-top:12px;height:54px;border-radius:99px;background:var(--s1);box-shadow:var(--borda-card);font-size:16px;font-weight:600;color:#fff;width:100%}
 .pilula.escura:disabled{opacity:.5}
+/* logo na entrada: mesma proporção da splash (largura = 2× o tamanho da fonte do título; espaço ≈ altura do x) */
+.entrada-logo{display:block;width:68px;height:auto;margin:0 auto 18px}

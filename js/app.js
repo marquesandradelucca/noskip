@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124192850";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124192850";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124192850";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124192955";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124192955";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124192955";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -682,6 +682,7 @@ function telaEntrada() {
   const criar = modoEntrada === "criar"; const s = situacao();
   const aviso = s.erro && /sessão expirou/i.test(s.erro) ? s.erro : "";
   return `<section class="entrada">
+    <img class="entrada-logo" src="icons/logo.png" alt="">
     <h1 class="entrada-titulo">NoSkip</h1>
     <p class="entrada-sub">${criar ? "Crie sua conta para começar." : "Entre na sua conta para continuar."}</p>
     <form class="card entrada-card" novalidate>
