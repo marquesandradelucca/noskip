@@ -404,3 +404,7 @@ body{overflow-x:hidden}
 .pilula.escura:disabled{opacity:.5}
 /* logo na entrada: mesma proporção da splash (largura = 2× o tamanho da fonte do título; espaço ≈ altura do x) */
 .entrada-logo{display:block;width:68px;height:auto;margin:0 auto 18px}
+/* logo + nome do login idênticos à splash (mesmos valores, mesma altura de linha) */
+.entrada-logo{width:60px;margin:0 auto 16px}
+.entrada-titulo{font-size:30px;line-height:1;letter-spacing:-.5px}
+.entrada-sub{margin-top:14px}
