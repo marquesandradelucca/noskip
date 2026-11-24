@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124201653";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124201653";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124201653";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124203150";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124203150";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124203150";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -17,6 +17,16 @@ const DIM = { casa: [23.32, 20.54], calendario: [19.46, 18], trofeu: [19.1, 21.4
   alvo: [19.92, 19.92], "calendario-circulo": [19.92, 19.92], medalha: [14.07, 24.37] };
 // endereço completo do ícone: funciona em qualquer pasta (localhost ou /noskip/ no GitHub Pages)
 const ic = (n, s = 1) => { const [w, h] = DIM[n]; return `<i class="ic" aria-hidden="true" style="--ic:url(${new URL("img/icones/" + n + ".svg", document.baseURI).href});width:${(w * s).toFixed(1)}px;height:${(h * s).toFixed(1)}px"></i>`; };
+// Vibração: Android usa navigator.vibrate; o iPhone não tem essa API, mas dá um toque háptico do sistema
+// quando um interruptor (<input switch>, iOS 18+) muda — então alternamos um escondido. Precisa vir de um toque.
+const _hap = (() => { const l = document.createElement("label"); l.setAttribute("aria-hidden", "true");
+  l.style.cssText = "position:fixed;left:-99px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none";
+  l.innerHTML = '<input type="checkbox" switch tabindex="-1">'; document.body.appendChild(l); return l; })();
+function vibrar(padrao) {
+  if (navigator.vibrate) { navigator.vibrate(padrao); return; }
+  const toques = Array.isArray(padrao) ? Math.ceil(padrao.length / 2) : 1;
+  for (let i = 0; i < toques; i++) setTimeout(() => _hap.click(), i * 90);
+}
 const gradMeta = r => "meta-" + r.est;
 const gradDet = r => "det-" + r.est;
 
@@ -448,7 +458,7 @@ function montaSlide(sl, ok) {
   const mover = e => { if (x0 === null) return; dx = Math.max(0, Math.min(max(), e.clientX - x0)); k.style.transform = `translateX(${dx}px)`; };
   k.addEventListener("pointerdown", e => { x0 = e.clientX; k.setPointerCapture(e.pointerId); k.style.transition = "none"; });
   k.addEventListener("pointermove", mover);
-  const soltar = () => { if (x0 === null) return; x0 = null; if (dx >= max() - 4) { if (navigator.vibrate) navigator.vibrate([20, 40, 60]); const r = k.getBoundingClientRect(); ok(r.left + r.width / 2, r.top + r.height / 2); } else { k.style.transition = "transform .25s"; k.style.transform = ""; } dx = 0; };
+  const soltar = () => { if (x0 === null) return; x0 = null; if (dx >= max() - 4) { vibrar([20, 40, 60]); const r = k.getBoundingClientRect(); ok(r.left + r.width / 2, r.top + r.height / 2); } else { k.style.transition = "transform .25s"; k.style.transform = ""; } dx = 0; };
   k.addEventListener("pointerup", soltar); k.addEventListener("pointercancel", soltar);
 }
 
@@ -493,7 +503,7 @@ function mostraMarco(v, depois) {
       card.animate([{ transform: "scale(.82) rotateY(0deg)" }, { transform: "scale(.9) rotateY(90deg)" }], { duration: 260, easing: "cubic-bezier(.5,0,1,.5)", fill: "forwards" }).onfinish = () => {
         card.classList.remove("bloqueado"); card.classList.add("grad");
         card.style.backgroundImage = `url(img/grad/${gradMarco(v)}.jpg)`; card.style.color = COR_NUM_MARCO[gradMarco(v)];
-        if (navigator.vibrate) navigator.vibrate([25, 30, 50]);
+        vibrar([25, 30, 50]);
         const t0 = performance.now(); const passo = agora => { const k = Math.min(1, (agora - t0) / 600); num.textContent = Math.round(v * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(passo); }; requestAnimationFrame(passo);
         card.animate([{ transform: "scale(.9) rotateY(-90deg)" }, { transform: "scale(1.08) rotateY(8deg)", offset: .7 }, { transform: "scale(1) rotateY(0deg)" }], { duration: 560, easing: "cubic-bezier(.2,.8,.3,1)", fill: "forwards" }).onfinish = fim;
       };
@@ -744,7 +754,7 @@ app.addEventListener("click", e => {
 // segurar para desfazer (Calendário)
 let segTimer;
 app.addEventListener("pointerdown", e => { const el = e.target.closest("[data-segurar]"); if (!el) return; segTimer = setTimeout(() => {
-  if (navigator.vibrate) navigator.vibrate(20);
+  vibrar(20);
   if (confirm("Desfazer este treino?")) { removerTreino(el.dataset.segurar); render(); } }, 600); });
 ["pointerup", "pointerleave", "pointercancel"].forEach(ev => app.addEventListener(ev, () => clearTimeout(segTimer)));
 
