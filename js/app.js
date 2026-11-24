@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124193843";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124193843";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124193843";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124194141";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124194141";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124194141";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -104,10 +104,10 @@ function telaHome() {
   const metas = metasAtivas();
   let h = `<section class="tela"><div class="cab"><div class="titulo">NoSkip</div><button class="btn-redondo" data-acao="ajustes" aria-label="Ajustes">${ic("ajustes")}</button></div>`;
   if (!metas.length) {
-    h += `<div class="card-meta grad" style="${G("primeira")};color:#0B1729" data-acao="nova-meta">
+    h += `<div class="card card-meta primeira-meta" data-acao="nova-meta">
       <div style="margin-top:auto;font-size:20px;font-weight:600">Comece com uma meta</div>
-      <div style="font-size:15px;opacity:.75;margin:8px 0 18px">Ex.: 50 treinos até o fim do ano. A gente mostra o ritmo, as faltas livres e comemora cada marco.</div>
-      <button class="pilula" style="background:#0B1729;color:#fff">Criar primeira meta</button></div>
+      <div style="font-size:15px;color:var(--txt2);margin:8px 0 18px">Ex.: 50 treinos até o fim do ano. A gente mostra o ritmo, as faltas livres e comemora cada marco.</div>
+      <button class="pilula">Criar primeira meta</button></div>
       <p class="vazio-dica">Dica: você pode ter várias metas ao mesmo tempo (ex.: fim do ano + carnaval).</p></section>`;
     return h;
   }

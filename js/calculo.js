@@ -1,5 +1,5 @@
 // Contas do NoSkip: progresso das metas, ritmo, projeção, sequência semanal e marcos.
-import { estado, hoje, data, iso, somaDias, difDias, inicioSemana } from "./dados.js?v=20261124193843";
+import { estado, hoje, data, iso, somaDias, difDias, inicioSemana } from "./dados.js?v=20261124194141";
 
 function diasUteis(m, de, ate) { // dias entre de e ate (inclusive)
   return ate < de ? 0 : difDias(de, ate) + 1;
