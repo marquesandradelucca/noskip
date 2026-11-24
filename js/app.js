@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124182135";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124182135";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124182135";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124183816";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124183816";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124183816";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -681,18 +681,17 @@ let modoEntrada = "entrar";
 function telaEntrada() {
   const criar = modoEntrada === "criar"; const s = situacao();
   const aviso = s.erro && /sessão expirou/i.test(s.erro) ? s.erro : "";
-  return `<section class="tela entrada"><div class="cab"><div class="titulo">NoSkip</div></div>
-    <form class="card-meta grad entrada-card" style="${G("primeira")};color:#0B1729" novalidate>
-      <div class="entrada-txt"><h2>${criar ? "Criar conta" : "Entrar"}</h2><p>${criar ? "Seus treinos ficam salvos na nuvem e aparecem em qualquer aparelho." : "Use a mesma conta do Ice Cream Lab, ou crie uma nova."}</p></div>
-      <div class="entrada-campos">
-        <input id="e-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" placeholder="E-mail" aria-label="E-mail">
-        <input id="e-senha" type="password" autocomplete="${criar ? "new-password" : "current-password"}" placeholder="Senha${criar ? " (mínimo 6 caracteres)" : ""}" aria-label="Senha">
-        ${criar ? '<input id="e-senha2" type="password" autocomplete="new-password" placeholder="Repita a senha" aria-label="Repita a senha">' : ""}
-      </div>
+  return `<section class="entrada">
+    <h1 class="entrada-titulo">NoSkip</h1>
+    <p class="entrada-sub">${criar ? "Crie sua conta para começar." : "Entre na sua conta para continuar."}</p>
+    <form class="card entrada-card" novalidate>
+      <input id="e-email" type="email" autocomplete="username" inputmode="email" autocapitalize="off" placeholder="E-mail" aria-label="E-mail">
+      <input id="e-senha" type="password" autocomplete="${criar ? "new-password" : "current-password"}" placeholder="Senha${criar ? " (mínimo 6 caracteres)" : ""}" aria-label="Senha">
+      ${criar ? '<input id="e-senha2" type="password" autocomplete="new-password" placeholder="Repita a senha" aria-label="Repita a senha">' : ""}
       <div class="entrada-erro" ${aviso ? "" : "hidden"}>${esc(aviso)}</div>
       <button type="submit" class="pilula entrada-ok">${criar ? "Criar conta" : "Entrar"}</button>
     </form>
-    <button type="button" class="entrada-troca" data-troca>${criar ? "Já tenho conta · Entrar" : "Não tem conta? Criar conta"}</button></section>`;
+    <button type="button" class="entrada-troca" data-troca>${criar ? "Já tenho conta" : "Criar conta"}</button></section>`;
 }
 function ligaEntrada() {
   const f = app.querySelector(".entrada-card"); const erro = f.querySelector(".entrada-erro");
