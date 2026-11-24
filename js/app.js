@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124194141";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124194141";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124194141";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124200156";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124200156";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124200156";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -521,21 +521,57 @@ function folhaData(atual, escolher) {
 }
 
 // ---------- metas ----------
+// Criar/editar meta. Para quem não sabe quantos treinos pedir: escolhe a frequência por semana e o prazo,
+// e o app calcula o total (que continua editável). O ritmo aparece ao vivo, com um selo de referência.
+function semanasMeta(m) { return Math.max(1, (difDias(m.inicio, m.prazo) + 1) / 7); }
+function seloRitmo(r) { return r <= 2.5 ? "leve" : r <= 4.5 ? "realista" : r <= 6 ? "puxado" : "muito puxado"; }
+function prazosRapidos(inicio) {
+  const d = data(inicio), fimMes = m => iso(new Date(d.getFullYear(), d.getMonth() + m, 0));
+  const mes = difDias(inicio, fimMes(1)) < 3 ? fimMes(2) : fimMes(1);           // nos últimos dias do mês, usa o próximo
+  const tres = somaDias(iso(new Date(d.getFullYear(), d.getMonth() + 3, d.getDate())), -1);
+  const anoFim = d.getFullYear() + "-12-31", ano = difDias(inicio, anoFim) < 14 || anoFim === mes ? (d.getFullYear() + 1) + "-12-31" : anoFim;
+  return [["Fim do mês", mes], ["3 meses", tres], ["Fim do ano", ano]];
+}
 function folhaMeta(meta) {
-  const ed = !!meta; const ano = new Date().getFullYear();
-  const m = meta ? { ...meta } : { id: novoId(), nome: "", alvo: 50, inicio: hoje(), prazo: ano + "-12-31", contar: "todos", status: "ativa" };
+  const ed = !!meta;
+  const m = meta ? { ...meta } : { id: novoId(), nome: "", alvo: 0, inicio: hoje(), prazo: "", contar: "todos", status: "ativa" };
+  if (!ed) { m.prazo = prazosRapidos(m.inicio)[2][1]; m.alvo = Math.max(1, Math.ceil(3 * semanasMeta(m) - 0.05)); }
+  const totalPara = v => Math.max(1, Math.ceil(v * semanasMeta(m) - 0.05)); // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
   const desenha = f => {
-    const sem = Math.max(1, difDias(m.inicio, m.prazo) / 7); const rit = (m.alvo / sem);
+    const rapidos = prazosRapidos(m.inicio);
+    const freqAtual = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
     f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab(ed ? "Editar meta" : "Nova meta")}
       <div class="campo"><label>Nome</label><input data-c="nome" value="${esc(m.nome)}" placeholder="Ex.: Fim do ano"></div>
-      <div class="dupla"><div class="campo"><label>Quantidade</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
-      <div class="campo"><label>Prazo</label><input data-c="prazo" type="date" value="${m.prazo}"></div></div>
-      <div class="campo"><label>Início</label><input data-c="inicio" type="date" value="${m.inicio}"></div>
+      <div class="campo"><label>Prazo</label>
+        <div class="chips" style="margin-top:4px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
+        <input data-c="prazo" type="date" value="${m.prazo}" style="margin-top:6px"></div>
+      <div class="campo"><label>Quantas vezes por semana?</label>
+        <div class="chips" style="margin-top:4px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
+      <div class="dupla"><div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
+      <div class="campo"><label>Início</label><input data-c="inicio" type="date" value="${m.inicio}"></div></div>
+      <div class="ritmo-vivo"><span class="rv-n"></span><span class="rv-t">por semana</span><span class="rv-selo"></span></div>
       <div class="campo"><label>Contar</label><div class="chips" style="margin-top:4px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
-      <div class="card-meta grad" style="${G("meta-noritmo")};min-height:120px;padding:14px 16px;cursor:default"><div style="font-size:13px">Prévia</div><div class="placar"><span class="n" style="font-size:48px">${rit.toFixed(1).replace(".", ",")}/sem</span></div></div>
       <button class="pilula" data-salvar>${ed ? "Salvar alterações" : "Salvar meta"}</button>`;
+    const ritmo = () => {
+      const r = m.alvo / semanasMeta(m), selo = seloRitmo(r);
+      f.querySelector(".rv-n").textContent = "≈ " + r.toFixed(1).replace(".", ",");
+      const el = f.querySelector(".rv-selo"); el.textContent = selo; el.dataset.s = selo;
+      const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
+      f.querySelectorAll("[data-freq]").forEach(b => b.classList.toggle("on", +b.dataset.freq === fq));
+    };
+    ritmo();
     f.querySelector("[data-fechar]").onclick = () => fecharFolha();
-    f.querySelectorAll("[data-c]").forEach(i => i.oninput = () => { const k = i.dataset.c; m[k] = k === "alvo" ? Math.max(1, +i.value || 1) : i.value; if (k !== "nome") { const p = f.querySelector(".card-meta .n"); const s = Math.max(1, difDias(m.inicio, m.prazo) / 7); p.textContent = (m.alvo / s).toFixed(1).replace(".", ",") + "/sem"; } });
+    f.querySelectorAll("[data-c]").forEach(i => i.oninput = () => {
+      const k = i.dataset.c;
+      if (k === "alvo") { m.alvo = Math.max(1, +i.value || 1); ritmo(); return; }
+      if (k === "nome") { m.nome = i.value; return; }
+      if (!i.value) return;
+      const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); // se veio de uma frequência, mantém a frequência
+      m[k] = i.value; if (fq) m.alvo = totalPara(fq);
+      desenha(f);
+    });
+    f.querySelectorAll("[data-prazo]").forEach(b => b.onclick = () => { const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); m.prazo = b.dataset.prazo; if (fq) m.alvo = totalPara(fq); desenha(f); });
+    f.querySelectorAll("[data-freq]").forEach(b => b.onclick = () => { m.alvo = totalPara(+b.dataset.freq); desenha(f); });
     f.querySelectorAll("[data-contar]").forEach(b => b.onclick = () => { m.contar = b.dataset.contar; desenha(f); });
     f.querySelector("[data-salvar]").onclick = () => {
       if (!m.nome.trim()) { f.querySelector('[data-c="nome"]').focus(); return; }
