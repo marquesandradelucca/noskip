@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124192058";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124192058";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124192058";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124192640";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124192640";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124192640";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -746,3 +746,10 @@ iniciaSync();
 document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
 
 render();
+
+// splash: fica pelo menos ~1 s (tempo da animação) e some em fade
+(() => {
+  const sp = document.getElementById("splash"); if (!sp) return;
+  const espera = Math.max(0, 1000 - performance.now());
+  setTimeout(() => { sp.classList.add("sai"); setTimeout(() => sp.remove(), 500); }, espera);
+})();
