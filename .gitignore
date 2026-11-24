@@ -1,3 +1,5 @@
 .claude/
 .DS_Store
 __pycache__/
+# arquivos-fonte do ícone (ficam só no computador)
+icons/Noskip apple logo*
