@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124193100";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124193100";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124193100";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124193708";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124193708";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124193708";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -748,9 +748,22 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) rend
 
 render();
 
-// splash: fica pelo menos ~1 s (tempo da animação) e some em fade
+// splash: as bolinhas acendem (~1,3 s) e depois:
+// - logado: a splash some em fade e mostra a Home;
+// - sem login: "âncora" — logo e nome deslizam até o lugar deles no login e o resto aparece em sequência.
 (() => {
   const sp = document.getElementById("splash"); if (!sp) return;
-  const espera = Math.max(0, 1000 - performance.now());
-  setTimeout(() => { sp.classList.add("sai"); setTimeout(() => sp.remove(), 500); }, espera);
+  const espera = Math.max(0, 1450 - performance.now());
+  setTimeout(() => {
+    const alvo = app.querySelector(".entrada-logo"), lg = sp.querySelector(".sp-logo"), g = sp.querySelector(".sp-grupo");
+    if (!alvo || !lg || reduzir) { sp.classList.add("sai"); setTimeout(() => sp.remove(), 500); return; }
+    const a = lg.getBoundingClientRect(), b = alvo.getBoundingClientRect();
+    const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = b.top - a.top;
+    document.body.classList.add("entrada-chegando", "entrada-anima");
+    sp.style.transition = "none"; sp.style.pointerEvents = "none";
+    sp.animate([{ backgroundColor: "#000" }, { backgroundColor: "rgba(0,0,0,0)" }], { duration: 400, fill: "forwards" });
+    g.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px)` }], { duration: 700, easing: EASE, fill: "forwards" })
+      .finished.then(() => { document.body.classList.remove("entrada-chegando"); sp.remove(); });
+    setTimeout(() => document.body.classList.remove("entrada-anima"), 1400);
+  }, espera);
 })();

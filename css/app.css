@@ -408,3 +408,10 @@ body{overflow-x:hidden}
 .entrada-logo{width:60px;margin:0 auto 16px}
 .entrada-titulo{font-size:30px;line-height:1;letter-spacing:-.5px}
 .entrada-sub{margin-top:14px}
+/* chegada no login vindo da splash: logo e nome esperam a splash chegar; o resto aparece em sequência */
+.entrada-chegando .entrada-logo,.entrada-chegando .entrada-titulo{visibility:hidden}
+.entrada-anima .entrada-sub,.entrada-anima .entrada-card,.entrada-anima .entrada-troca{animation:entrada-sobe .55s cubic-bezier(.2,.8,.2,1) both}
+.entrada-anima .entrada-sub{animation-delay:.25s}
+.entrada-anima .entrada-card{animation-delay:.35s}
+.entrada-anima .entrada-troca{animation-delay:.45s}
+@keyframes entrada-sobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
