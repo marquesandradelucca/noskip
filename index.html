@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=20261124224349">
+<link rel="stylesheet" href="css/app.css?v=20261124231026">
 <style>
 /* Logo em código (splash e login), flat: 6 pontos como os dias da semana — brancos acesos, rosa de bônus, um vazio. */
 .lg-pts{--t:15px;display:grid;grid-template-columns:repeat(3,var(--t));gap:calc(var(--t)*.48);width:max-content}
@@ -47,7 +47,7 @@
 <div id="splash" aria-hidden="true"><div class="sp-grupo"><div class="lg-pts anima"><i style="--d:0.25s"></i><i style="--d:0.37s"></i><i style="--d:0.49s"></i><i style="--d:0.61s"></i><i class="r" style="--d:.8s"></i><i class="v"></i></div><span>NoSkip</span></div></div>
 <div id="app"></div>
 <div id="camada"></div>
-<script type="module" src="js/app.js?v=20261124224349"></script>
+<script type="module" src="js/app.js?v=20261124231026"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 setTimeout(() => { const s = document.getElementById("splash"); if (s) s.remove(); }, 6000); // segurança: nunca fica preso na splash

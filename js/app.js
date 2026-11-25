@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124224349";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124224349";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124224349";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124231026";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124231026";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124231026";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -37,7 +37,7 @@ function render(anim) {
   if (ui.detalhe) { const m = estado.metas.find(x => x.id === ui.detalhe); if (m) { app.innerHTML = telaDetalhe(m); animar(anim); return; } ui.detalhe = null; }
   const t = ui.aba === "home" ? telaHome() : ui.aba === "cal" ? telaCal() : telaConq();
   app.innerHTML = t + abas();
-  animar(anim);
+  animar(anim); animarAbas();
   if (ui.aba === "home") checaPrazos();
 }
 function animar(anim) {
@@ -104,9 +104,20 @@ const RELOGIO = (() => { let s = '<svg class="relogio" viewBox="0 0 80 80" aria-
 const COR_NUM_MARCO = { "marco-10": "#FFFFFF", "marco-20": "#FFFFFF", "marco-30": "#FFFFFF", "marco-50": "#FFFFFF", "marco-100": "#FFFFFF" }; // números brancos
 const ORDEM_ABAS = ["home", "cal", "conq"];
 
+// troca de aba: a pílula desliza da aba anterior até a nova (com um leve "quique") e o ícone novo dá um pulinho
+function animarAbas() {
+  const de = ui.abaAnt; ui.abaAnt = null;
+  if (de == null || reduzir) return;
+  const p = app.querySelector(".abas-pilula"), para = ORDEM_ABAS.indexOf(ui.aba), passo = 84;
+  if (!p || de === para) return;
+  p.animate([{ transform: `translateX(${de * passo}px) scaleX(1)` }, { transform: `translateX(${(de + para) / 2 * passo}px) scaleX(1.18)`, offset: .45 }, { transform: `translateX(${para * passo}px) scaleX(1)` }],
+    { duration: 460, easing: "cubic-bezier(.3,1.25,.5,1)" });
+  const icone = app.querySelector(".aba.ativa .ic");
+  if (icone) icone.animate([{ transform: "scale(.8)" }, { transform: "scale(1.14)", offset: .55 }, { transform: "scale(1)" }], { duration: 420, delay: 120, easing: "ease-out", fill: "backwards" });
+}
 function abas() {
   const a = (id, n, n2) => `<button class="aba ${ui.aba === id ? "ativa" : ""}" data-aba="${id}" >${ic(n2, 1)}<span class="aba-rot">${n}</span></button>`;
-  return `<nav class="abas">${a("home", "Home", "casa")}${a("cal", "Calendário", "calendario")}${a("conq", "Conquistas", "trofeu")}</nav>`;
+  return `<nav class="abas"><span class="abas-pilula" style="--i:${ORDEM_ABAS.indexOf(ui.aba)}"></span>${a("home", "Home", "casa")}${a("cal", "Calendário", "calendario")}${a("conq", "Conquistas", "trofeu")}</nav>`;
 }
 
 // ---------- Home ----------
@@ -741,7 +752,7 @@ function folhaFaixas() {
 app.addEventListener("click", e => {
   const el = e.target.closest("[data-aba],[data-acao],[data-meta],[data-dia],[data-modo],[data-mes],[data-ano],[data-marco]"); if (!el) return;
   const d = el.dataset;
-  if (d.aba) { if (d.aba === ui.aba) return; const dir = ORDEM_ABAS.indexOf(d.aba) > ORDEM_ABAS.indexOf(ui.aba) ? "dir" : "esq"; ui.aba = d.aba; window.scrollTo(0, 0); render(dir); return; }
+  if (d.aba) { if (d.aba === ui.aba) return; const dir = ORDEM_ABAS.indexOf(d.aba) > ORDEM_ABAS.indexOf(ui.aba) ? "dir" : "esq"; ui.abaAnt = ORDEM_ABAS.indexOf(ui.aba); ui.aba = d.aba; window.scrollTo(0, 0); render(dir); return; }
   if (d.acao) { e.stopPropagation();
     const a = d.acao;
     if (a === "checkin") folhaCheckin();
