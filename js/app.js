@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234124";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234124";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234124";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234312";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234312";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234312";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -550,6 +550,7 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   const revela = () => { acendePonto(); rolaPlacares(); celebraMetas(); };
   const fim = () => { div.remove(); if (novo) mostraMarco(novo, () => { revela(); toastDesfazer(t); }); else { revela(); toastDesfazer(t); } };
   div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, mb ? 3300 : 2000);
+  if (mb && !reduzir) setTimeout(() => { const mc = div.querySelector(".mini-meta"); if (mc) confete(div, mc, CORES_BATIDA); }, 1350); // quando o mini card assenta
 }
 
 // ponto do dia no card Semana: acende (como na splash); se foi bônus, a bolinha rosa aparece com glow
@@ -570,6 +571,25 @@ function celebraMetas() {
     if (reduzir) { if (selo) selo.classList.remove("espera"); continue; }
     setTimeout(() => { card.classList.add("celebra"); if (selo) { selo.classList.remove("espera"); selo.classList.add("pop"); } vibrar([30, 50, 30]);
       setTimeout(() => card.classList.remove("celebra"), 1400); }, 1300);
+  }
+}
+// confete nas cores do gradiente de meta batida, saindo do mini card: sobe e se espalha, depois cai girando
+const CORES_BATIDA = ["#FF6B10", "#FFA94D", "#E03A12", "#BFD9C3", "#6F816B", "#FFFFFF"];
+function confete(camadaEl, origem, cores) {
+  const r = origem.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 46; i++) {
+    const p = document.createElement("i"); p.className = "confete";
+    const w = 5 + Math.random() * 4, h = Math.random() < .35 ? w : w * (1.6 + Math.random() * .8);
+    Object.assign(p.style, { left: cx + (Math.random() - .5) * r.width * .7 + "px", top: cy + (Math.random() - .5) * r.height * .4 + "px", width: w + "px", height: h + "px",
+      background: cores[i % cores.length], borderRadius: h === w ? "50%" : "2px" });
+    camadaEl.appendChild(p);
+    const ang = -Math.PI / 2 + (Math.random() - .5) * 2.2, v = 140 + Math.random() * 190;
+    const dx = Math.cos(ang) * v, dy = Math.sin(ang) * v, queda = 260 + Math.random() * 220, gira = (Math.random() - .5) * 900, dur = 1300 + Math.random() * 700;
+    p.animate([
+      { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+      { transform: `translate(${dx * .85}px,${dy}px) rotate(${gira * .4}deg)`, opacity: 1, offset: .35, easing: "cubic-bezier(.3,0,.7,1)" },
+      { transform: `translate(${dx}px,${dy + queda}px) rotate(${gira}deg)`, opacity: 0 }
+    ], { duration: dur, easing: "cubic-bezier(.15,.7,.3,1)", fill: "forwards" }).finished.then(() => p.remove());
   }
 }
 function mostraMarco(v, depois) {

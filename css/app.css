@@ -484,3 +484,4 @@ body{overflow-x:hidden}
 .mini-meta::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);transform:translateX(-120%);animation:brilho-meta 1s cubic-bezier(.3,.6,.3,1) 1.55s forwards}
 @keyframes mini-sobe{from{opacity:0;transform:translateY(24px) scale(.92)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.mini-meta,.mini-meta::after{animation:none}}
+.confete{position:fixed;z-index:2;pointer-events:none;will-change:transform,opacity}
