@@ -474,3 +474,13 @@ body{overflow-x:hidden}
 .card-meta .selo.espera{opacity:0}
 .card-meta .selo.pop{animation:selo-pop .6s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes selo-pop{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+/* mini card de meta batida na tela do "+1" */
+.mini-meta{position:relative;overflow:hidden;width:220px;margin-top:14px;padding:14px 16px;border-radius:22px;background-size:cover;background-position:center;box-shadow:var(--borda-card),inset 0 0 28px rgba(255,255,255,.14);
+  display:grid;grid-template-columns:1fr auto;align-items:end;gap:2px 8px;animation:mini-sobe .6s cubic-bezier(.3,1.4,.5,1) 1.05s both}
+.mini-meta .mm-nome{grid-column:1/-1;font-size:14px;font-weight:600}
+.mini-meta .mm-pl{font-size:15px;font-weight:300}
+.mini-meta .mm-pl span{font-size:34px;letter-spacing:-.03em}
+.mini-meta .mm-selo{font-size:12px;font-weight:600;padding:4px 9px;border-radius:99px;background:var(--vidro-claro-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--vidro-claro-borda);align-self:end;margin-bottom:6px}
+.mini-meta::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.6) 50%,transparent 70%);transform:translateX(-120%);animation:brilho-meta 1s cubic-bezier(.3,.6,.3,1) 1.55s forwards}
+@keyframes mini-sobe{from{opacity:0;transform:translateY(24px) scale(.92)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mini-meta,.mini-meta::after{animation:none}}

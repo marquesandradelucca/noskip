@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124233536";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124233536";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124233536";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234124";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234124";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234124";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -539,13 +539,17 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   document.body.appendChild(luz); setTimeout(() => luz.remove(), 1400);
   const div = document.createElement("div"); div.className = "confirma"; div.style.setProperty("--cor", cor);
   let sub = "";
-  if (m) { const r = resumo(m); sub = `<div class="t">${r.feitos} de ${m.alvo}</div><div class="s">${r.faltam ? "faltam " + r.faltam + " · " + r.diasPrazo + " dias" : "meta batida!"}</div>`; }
-  div.innerHTML = `<div class="mais1">+1</div><div class="resto">${sub}<div class="tag">${t.bonus ? "Treino bônus" : seq.atual > seqAntes ? "Sequência · " + seq.atual + " semanas" : "Sequência mantida · " + seq.atual + " semanas"}</div></div>`;
+  const mbId = (ui.batidaNova || [])[0];
+  if (m) { const r = resumo(m); sub = `<div class="t">${r.feitos} de ${m.alvo}</div>${r.faltam ? `<div class="s">faltam ${r.faltam} · ${r.diasPrazo} dias</div>` : mbId ? "" : '<div class="s">meta batida!</div>'}`; }
+  // meta batida neste check-in: depois do selo de sequência, sobe um mini card da meta com o gradiente de meta batida
+  const mb = (ui.batidaNova || []).map(id => estado.metas.find(x => x.id === id)).find(Boolean);
+  const mini = mb ? `<div class="mini-meta" style="${G("meta-batida")}"><div class="mm-nome">${esc(mb.nome)}</div><div class="mm-pl"><span>${mb.alvo}</span>/${mb.alvo}</div><div class="mm-selo">Meta batida</div></div>` : "";
+  div.innerHTML = `<div class="mais1">+1</div><div class="resto">${sub}<div class="tag">${t.bonus ? "Treino bônus" : seq.atual > seqAntes ? "Sequência · " + seq.atual + " semanas" : "Sequência mantida · " + seq.atual + " semanas"}</div>${mini}</div>`;
   document.body.appendChild(div);
   // o ponto acende e o placar rola quando a Home fica visível (depois do "+1" e, se houver, da tela de novo marco)
   const revela = () => { acendePonto(); rolaPlacares(); celebraMetas(); };
   const fim = () => { div.remove(); if (novo) mostraMarco(novo, () => { revela(); toastDesfazer(t); }); else { revela(); toastDesfazer(t); } };
-  div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, 2000);
+  div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, mb ? 3300 : 2000);
 }
 
 // ponto do dia no card Semana: acende (como na splash); se foi bônus, a bolinha rosa aparece com glow
