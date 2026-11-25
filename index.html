@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=20261124223832">
+<link rel="stylesheet" href="css/app.css?v=20261124224012">
 <style>
 /* Logo em código (splash e login), flat: 6 pontos como os dias da semana — brancos acesos, rosa de bônus, um vazio. */
 .lg-pts{--t:15px;display:grid;grid-template-columns:repeat(3,var(--t));gap:calc(var(--t)*.48);width:max-content}
@@ -27,6 +27,11 @@
 /* animação: acendem um a um; a rosa dá um pulso de bônus; a vazia fica apagada */
 .lg-pts.anima i:not(.v)::before{animation:lg-acende .32s var(--d) ease-out forwards}
 .lg-pts.anima i.r{animation:lg-pulso .5s var(--d) cubic-bezier(.3,1.6,.5,1) both}
+/* halo da rosa: ao acender, um anel rosa se expande e some, com um brilho suave */
+.lg-pts.anima i.r::after{content:"";position:absolute;inset:0;border-radius:50%;opacity:0;animation:lg-halo .8s var(--d) ease-out both}
+@keyframes lg-halo{0%{opacity:0;box-shadow:0 0 0 0 rgba(255,46,106,.7),0 0 0 0 rgba(255,46,106,0)}
+  25%{opacity:1;box-shadow:0 0 0 2px rgba(255,46,106,.55),0 0 14px 4px rgba(255,46,106,.5)}
+  100%{opacity:0;box-shadow:0 0 0 12px rgba(255,46,106,0),0 0 22px 8px rgba(255,46,106,0)}}
 @keyframes lg-acende{from{opacity:0}to{opacity:1}}
 @keyframes lg-pulso{0%{transform:scale(1)}45%{transform:scale(1.32)}100%{transform:scale(1)}}
 
@@ -36,14 +41,14 @@
 .sp-grupo{display:flex;flex-direction:column;align-items:center;gap:16px;animation:sp-entra .4s ease-out both}
 .sp-grupo span{font:600 30px/1 Inter,-apple-system,sans-serif;letter-spacing:-.5px;color:#fff}
 @keyframes sp-entra{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.sp-grupo,.lg-pts.anima i,.lg-pts.anima i::before{animation:none}.lg-pts.anima i:not(.v)::before{opacity:1}}
+@media (prefers-reduced-motion:reduce){.sp-grupo,.lg-pts.anima i,.lg-pts.anima i::before,.lg-pts.anima i::after{animation:none}.lg-pts.anima i:not(.v)::before{opacity:1}}
 </style>
 </head>
 <body>
 <div id="splash" aria-hidden="true"><div class="sp-grupo"><div class="lg-pts anima"><i style="--d:0.25s"></i><i style="--d:0.37s"></i><i style="--d:0.49s"></i><i style="--d:0.61s"></i><i class="r" style="--d:.8s"></i><i class="v"></i></div><span>NoSkip</span></div></div>
 <div id="app"></div>
 <div id="camada"></div>
-<script type="module" src="js/app.js?v=20261124223832"></script>
+<script type="module" src="js/app.js?v=20261124224012"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 setTimeout(() => { const s = document.getElementById("splash"); if (s) s.remove(); }, 6000); // segurança: nunca fica preso na splash
