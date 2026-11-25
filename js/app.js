@@ -1,12 +1,12 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124222923";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124222923";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124222923";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124223216";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124223216";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124223216";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
-const ui = { aba: "home", detalhe: null, cal: { modo: "ano", sel: hoje(), ref: hoje().slice(0, 7) }, prazoMostrado: {} };
+const ui = { aba: "home", detalhe: null, cal: { modo: "ano", sel: hoje(), aberto: true, ref: hoje().slice(0, 7) }, prazoMostrado: {} };
 
 // ---------- utilidades ----------
 const G = k => `background-image:url(img/grad/${k}.jpg)`;
@@ -319,6 +319,7 @@ function telaCal() {
     h += `<div class="mes-nav"><div class="titulo">${mesLongo(a, mm - 1)}${a !== new Date().getFullYear() ? " " + a : ""}</div><div style="display:flex;gap:8px"><button class="btn-redondo" data-mes="-1">${ic("seta-esq")}</button><button class="btn-redondo" data-mes="1">${ic("seta-dir")}</button></div></div>
       <div class="sub">${mesTs.length} treinos · ${mesTs.filter(t => t.bonus).length} bônus</div>` + toggleCal() + gradeMes(a, mm - 1);
   }
+  if (!c.aberto) return h + `</section>`; // dia desmarcado: sem detalhes
   h += `<div class="titulo-dia">${comDia(c.sel)}</div>`;
   for (const m of prazosDoDia(c.sel)) { const r = resumo(m);
     h += `<div class="linha prazo-linha" data-meta="${m.id}"><span class="pz-dot" style="background:${corPrazo(m)}"></span><span class="tx"><span class="t1">Prazo · ${esc(m.nome)}</span><span class="t2">${r.feitos} de ${m.alvo} · ${r.est === "batida" ? "meta batida" : r.encerrou ? "encerrada" : r.faltam + (r.faltam === 1 ? " treino falta" : " treinos faltam")}</span></span><span class="seta">›</span></div>`; }
@@ -371,7 +372,7 @@ function gradeAno(ano) {
   for (let i = 0; i < n; i++) {
     const dt = somaDias(ano + "-01-01", i); const e = estiloDia(dt); const col = i % cols;
     const pz = prazosDoDia(dt)[0];
-    s += `<i data-dia="${dt}" class="${e.c}${capsula(dt, col === 0, col === cols - 1 || i === n - 1)} ${dt === hoje() ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}${pz ? " prazo" : ""}"${pz ? ` style="--cor:${corPrazo(pz)}"` : ""}></i>`;
+    s += `<i data-dia="${dt}" class="${e.c}${capsula(dt, col === 0, col === cols - 1 || i === n - 1)} ${dt === hoje() ? "hoje" : ""} ${dt === ui.cal.sel && ui.cal.aberto ? "sel" : ""}${pz ? " prazo" : ""}"${pz ? ` style="--cor:${corPrazo(pz)}"` : ""}></i>`;
   }
   return s + `</div>` + legendaCal();
 }
@@ -381,7 +382,7 @@ function gradeMes(a, m) {
   let s = `<div class="mes">${letrasSemana().map(l => `<span class="ds">${l}</span>`).join("")}`;
   for (let i = 0; i < off; i++) s += "<span></span>";
   for (let d = 1; d <= ult; d++) { const dt = iso(new Date(a, m, d)); const e = estiloDia(dt); const col = (off + d - 1) % 7;
-    s += `<button class="dia ${e.c}${capsula(dt, col === 0 || d === 1, col === 6 || d === ult)} ${dt === h ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}" data-dia="${dt}">${d}${e.txt ? `<span class="cj-tag">${ic("coringa", .6)}</span>` : ""}${(() => { const pz = prazosDoDia(dt)[0]; return pz ? `<span class="pz-tag ${e.txt || e.c === "b" ? "esq" : ""}" style="--cor:${corPrazo(pz)}"></span>` : ""; })()}</button>`; }
+    s += `<button class="dia ${e.c}${capsula(dt, col === 0 || d === 1, col === 6 || d === ult)} ${dt === h ? "hoje" : ""} ${dt === ui.cal.sel && ui.cal.aberto ? "sel" : ""}" data-dia="${dt}">${d}${e.txt ? `<span class="cj-tag">${ic("coringa", .6)}</span>` : ""}${(() => { const pz = prazosDoDia(dt)[0]; return pz ? `<span class="pz-tag ${e.txt || e.c === "b" ? "esq" : ""}" style="--cor:${corPrazo(pz)}"></span>` : ""; })()}</button>`; }
   return s + "</div>" + legendaCal();
 }
 
@@ -474,7 +475,7 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   const antes = totalTreinos(); const seqAntes = sequencia().atual;
   const t = registrar(dia, tipo); if (!t) return;
   fecharFolha(true);
-  ui.cal.sel = dia;
+  ui.cal.sel = dia; ui.cal.aberto = true;
   render();
   const metas = metasAtivas(); const m = metas[0];
   const novo = MARCOS.find(v => antes < v && totalTreinos() >= v);
@@ -751,7 +752,10 @@ app.addEventListener("click", e => {
     else if (a === "acoes") folhaAcoes(estado.metas.find(m => m.id === d.id));
     return; }
   if (d.meta) { abrirDetalhe(d.meta, el); return; }
-  if (d.dia) { ui.cal.sel = d.dia; if (ui.cal.modo === "mes") ui.cal.ref = d.dia.slice(0, 7); render(); return; }
+  if (d.dia) { // tocar de novo no dia marcado desmarca
+    if (ui.cal.sel === d.dia && ui.cal.aberto) ui.cal.aberto = false;
+    else { ui.cal.sel = d.dia; ui.cal.aberto = true; if (ui.cal.modo === "mes") ui.cal.ref = d.dia.slice(0, 7); }
+    render(); return; }
   if (d.modo) { if (d.modo === ui.cal.modo) return; ui.cal.modo = d.modo; ui.cal.ref = ui.cal.sel.slice(0, 7); render(); const g = app.querySelector(".ano,.mes"); if (g) g.classList.add("tr-grade"); return; }
   if (d.ano) { const s = ui.cal.sel; const na = +s.slice(0, 4) + +d.ano; const dt = new Date(na, +s.slice(5, 7) - 1, Math.min(+s.slice(8), new Date(na, +s.slice(5, 7), 0).getDate())); ui.cal.sel = iso(dt); ui.cal.ref = ui.cal.sel.slice(0, 7); render(); return; }
   if (d.mes) { const [a, m] = ui.cal.ref.split("-").map(Number); ui.cal.ref = iso(new Date(a, m - 1 + +d.mes, 1)).slice(0, 7); render(); return; }
