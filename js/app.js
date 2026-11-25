@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124203150";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124203150";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124203150";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124222611";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124222611";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124222611";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -836,12 +836,12 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) rend
 
 render();
 
-// splash: as bolinhas acendem (~0,8 s) e depois:
+// splash: as bolinhas acendem (~1,3 s) e depois:
 // - logado: a splash some em fade e mostra a Home;
 // - sem login: "âncora" — logo e nome deslizam até o lugar deles no login e o resto aparece em sequência.
 (() => {
   const sp = document.getElementById("splash"); if (!sp) return;
-  const espera = Math.max(0, 950 - performance.now());
+  const espera = Math.max(0, 1450 - performance.now());
   setTimeout(() => {
     const alvo = app.querySelector(".entrada-logo"), lg = sp.querySelector(".sp-logo"), g = sp.querySelector(".sp-grupo");
     if (!alvo || !lg || reduzir) { sp.classList.add("sai"); setTimeout(() => sp.remove(), 500); return; }
