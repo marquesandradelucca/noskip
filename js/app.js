@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235630";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235630";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235630";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235742";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235742";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235742";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -37,7 +37,7 @@ function render(anim) {
   if (ui.detalhe) { const m = estado.metas.find(x => x.id === ui.detalhe); if (m) { app.innerHTML = telaDetalhe(m); animar(anim); return; } ui.detalhe = null; }
   const t = ui.aba === "home" ? telaHome() : ui.aba === "cal" ? telaCal() : telaConq();
   app.innerHTML = t + abas();
-  animar(anim); animarAbas();
+  animar(anim); animarAbas(); animarCal();
   if (ui.aba === "home") checaPrazos();
 }
 function animar(anim) {
@@ -105,6 +105,13 @@ const COR_NUM_MARCO = { "marco-10": "#FFFFFF", "marco-20": "#FFFFFF", "marco-30"
 const ORDEM_ABAS = ["home", "cal", "conq"];
 
 // troca de aba: a pílula desliza da aba anterior até a nova (com um leve "quique") e o ícone novo dá um pulinho
+// calendário: ao trocar de mês/ano pelas setas, a grade e o título deslizam para o lado (como virar a página)
+function animarCal() {
+  const dir = ui.calDir; ui.calDir = 0; if (!dir || reduzir) return;
+  const els = app.querySelectorAll(".mes-nav .titulo, .tela > .sub, .ano, .mes");
+  els.forEach((el, i) => el.animate([{ transform: `translateX(${dir * 44}px)`, opacity: 0 }, { transform: "none", opacity: 1 }],
+    { duration: 380, delay: i === 0 ? 0 : 30, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }));
+}
 function animarAbas() {
   const de = ui.abaAnt; ui.abaAnt = null;
   if (de == null || reduzir) return;
@@ -908,8 +915,8 @@ app.addEventListener("click", e => {
     else { ui.cal.sel = d.dia; ui.cal.aberto = true; if (ui.cal.modo === "mes") ui.cal.ref = d.dia.slice(0, 7); }
     render(); return; }
   if (d.modo) { if (d.modo === ui.cal.modo) return; ui.cal.modo = d.modo; ui.cal.ref = ui.cal.sel.slice(0, 7); render(); const g = app.querySelector(".ano,.mes"); if (g) g.classList.add("tr-grade"); return; }
-  if (d.ano) { const s = ui.cal.sel; const na = +s.slice(0, 4) + +d.ano; const dt = new Date(na, +s.slice(5, 7) - 1, Math.min(+s.slice(8), new Date(na, +s.slice(5, 7), 0).getDate())); ui.cal.sel = iso(dt); ui.cal.ref = ui.cal.sel.slice(0, 7); render(); return; }
-  if (d.mes) { const [a, m] = ui.cal.ref.split("-").map(Number); ui.cal.ref = iso(new Date(a, m - 1 + +d.mes, 1)).slice(0, 7); render(); return; }
+  if (d.ano) { ui.calDir = +d.ano; const s = ui.cal.sel; const na = +s.slice(0, 4) + +d.ano; const dt = new Date(na, +s.slice(5, 7) - 1, Math.min(+s.slice(8), new Date(na, +s.slice(5, 7), 0).getDate())); ui.cal.sel = iso(dt); ui.cal.ref = ui.cal.sel.slice(0, 7); render(); return; }
+  if (d.mes) { ui.calDir = +d.mes; const [a, m] = ui.cal.ref.split("-").map(Number); ui.cal.ref = iso(new Date(a, m - 1 + +d.mes, 1)).slice(0, 7); render(); return; }
   if (d.marco) { const v = +d.marco; const dt = dataDoMarco(v); toastInfo(dt ? `${v} treinos · conquistado em ${curta(dt)}` : `Faltam ${v - totalTreinos()} treinos para o ${v}`); }
 });
 
