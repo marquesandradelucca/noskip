@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232158";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232158";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232158";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232456";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232456";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232456";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -657,7 +657,7 @@ function folhaMeta(meta, rascunho) {
     f.querySelectorAll("[data-contar]").forEach(b => b.onclick = () => { m.contar = b.dataset.contar; desenha(f); });
     f.querySelector("[data-salvar]").onclick = () => {
       if (!m.nome.trim()) { f.querySelector('[data-c="nome"]').focus(); return; }
-      if (m.prazo <= m.inicio) { alert("O prazo precisa ser depois do início."); return; }
+      if (m.prazo <= m.inicio) { toastInfo("O prazo precisa ser depois do início."); return; }
       salvarMeta(m); fecharFolha(); render();
     };
   };
@@ -673,6 +673,14 @@ function folhaAcoes(m) {
   });
 }
 
+// alerta no visual do app (no lugar do confirm() do navegador, que alguns ambientes bloqueiam)
+function alerta(titulo, texto, rotuloOk, ok) {
+  const d = document.createElement("div"); d.className = "alerta";
+  d.innerHTML = `<div class="box"><h3>${titulo}</h3>${texto ? `<p>${texto}</p>` : ""}<div class="bts"><button data-n>Cancelar</button><button class="verm" data-s>${rotuloOk}</button></div></div>`;
+  document.body.appendChild(d);
+  d.querySelector("[data-n]").onclick = () => d.remove();
+  d.querySelector("[data-s]").onclick = () => { d.remove(); ok(); };
+}
 function alertaExcluir(m) {
   const d = document.createElement("div"); d.className = "alerta";
   d.innerHTML = `<div class="box"><h3>Excluir “${esc(m.nome)}”?</h3><p>O progresso desta meta será apagado. Não dá para desfazer.</p><div class="bts"><button data-n>Cancelar</button><button class="verm" data-s>Excluir</button></div></div>`;
@@ -788,7 +796,7 @@ app.addEventListener("click", e => {
 let segTimer;
 app.addEventListener("pointerdown", e => { const el = e.target.closest("[data-segurar]"); if (!el) return; segTimer = setTimeout(() => {
   vibrar(20);
-  if (confirm("Desfazer este treino?")) { removerTreino(el.dataset.segurar); render(); } }, 600); });
+  alerta("Desfazer este treino?", "Ele sai do calendário e das metas.", "Desfazer", () => { removerTreino(el.dataset.segurar); render(); }); }, 600); });
 ["pointerup", "pointerleave", "pointercancel"].forEach(ev => app.addEventListener(ev, () => clearTimeout(segTimer)));
 
 function toastInfo(txt) {
