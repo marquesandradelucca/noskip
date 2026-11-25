@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261125000330";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261125000330";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261125000330";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261125000550";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261125000550";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261125000550";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -1014,7 +1014,10 @@ function telaEntrada() {
 }
 function ligaEntrada() {
   const f = app.querySelector(".entrada-card"); const erro = f.querySelector(".entrada-erro");
-  const mostra = t => { erro.textContent = t; erro.hidden = false; };
+  // erro: aparece a mensagem e o card balança de leve (o "não" que todo mundo entende), com uma vibração curta
+  const mostra = t => { erro.textContent = t; erro.hidden = false; vibrar([30, 40, 30]);
+    if (!reduzir) f.animate([{ transform: "none" }, { transform: "translateX(-10px)" }, { transform: "translateX(9px)" }, { transform: "translateX(-6px)" }, { transform: "translateX(4px)" }, { transform: "translateX(-2px)" }, { transform: "none" }],
+      { duration: 460, easing: "ease-out" }); };
   app.querySelector("[data-troca]").onclick = () => { modoEntrada = modoEntrada === "criar" ? "entrar" : "criar"; render(); };
   f.onsubmit = async ev => {
     ev.preventDefault();
