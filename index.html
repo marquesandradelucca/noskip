@@ -16,18 +16,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=20261124223713">
+<link rel="stylesheet" href="css/app.css?v=20261124223832">
 <style>
-/* Logo em código (splash e login): 6 pontos como os LEDs da semana — brancos acesos, rosa de bônus, um vazio.
-   Vidro: reflexo no topo, borda clara fina e brilho em volta, nas cores do app. */
+/* Logo em código (splash e login), flat: 6 pontos como os dias da semana — brancos acesos, rosa de bônus, um vazio. */
 .lg-pts{--t:15px;display:grid;grid-template-columns:repeat(3,var(--t));gap:calc(var(--t)*.48);width:max-content}
-.lg-pts i{position:relative;width:var(--t);height:var(--t);border-radius:50%;background:#2C2C2E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
-.lg-pts i::before{content:"";position:absolute;inset:0;border-radius:50%;opacity:0;
-  background:radial-gradient(circle at 50% 18%,rgba(255,255,255,.95) 0 22%,rgba(255,255,255,0) 46%),linear-gradient(#FFFFFF,#E4E4EA);
-  box-shadow:0 0 calc(var(--t)*.6) rgba(255,255,255,.55),inset 0 0 0 1px rgba(255,255,255,.9),inset 0 -2px 3px rgba(0,0,0,.12)}
-.lg-pts i.r::before{background:radial-gradient(circle at 50% 18%,rgba(255,255,255,.75) 0 20%,rgba(255,255,255,0) 46%),linear-gradient(#FF5C8C,#FF2E6A 60%,#E0185A);
-  box-shadow:0 0 calc(var(--t)*.75) rgba(255,46,106,.75),inset 0 0 0 1px rgba(255,170,195,.7),inset 0 -2px 3px rgba(0,0,0,.15)}
-.lg-pts i.v{background:radial-gradient(circle at 50% 18%,rgba(255,255,255,.14) 0 22%,rgba(255,255,255,0) 46%),#2C2C2E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.lg-pts i{position:relative;width:var(--t);height:var(--t);border-radius:50%;background:#2C2C2E}
+.lg-pts i::before{content:"";position:absolute;inset:0;border-radius:50%;opacity:0;background:#fff}
+.lg-pts i.r::before{background:#FF2E6A}
 .lg-pts.aceso i:not(.v)::before{opacity:1}
 /* animação: acendem um a um; a rosa dá um pulso de bônus; a vazia fica apagada */
 .lg-pts.anima i:not(.v)::before{animation:lg-acende .32s var(--d) ease-out forwards}
@@ -48,7 +43,7 @@
 <div id="splash" aria-hidden="true"><div class="sp-grupo"><div class="lg-pts anima"><i style="--d:0.25s"></i><i style="--d:0.37s"></i><i style="--d:0.49s"></i><i style="--d:0.61s"></i><i class="r" style="--d:.8s"></i><i class="v"></i></div><span>NoSkip</span></div></div>
 <div id="app"></div>
 <div id="camada"></div>
-<script type="module" src="js/app.js?v=20261124223713"></script>
+<script type="module" src="js/app.js?v=20261124223832"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 setTimeout(() => { const s = document.getElementById("splash"); if (s) s.remove(); }, 6000); // segurança: nunca fica preso na splash
