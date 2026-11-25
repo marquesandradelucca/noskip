@@ -458,8 +458,10 @@ body{overflow-x:hidden}
 @keyframes pt-acende{0%{background:var(--s3);box-shadow:none;transform:scale(1)}45%{background:#fff;box-shadow:0 0 16px rgba(255,255,255,.75);transform:scale(1.2)}100%{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.55);transform:scale(1)}}
 .ponto .bonus.acende{animation:pt-bonus .6s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes pt-bonus{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.8);box-shadow:0 0 12px 3px var(--rosa)}100%{opacity:1;transform:scale(1);box-shadow:0 0 8px var(--rosa)}}
-/* placar rolando: os dígitos que mudam giram para cima, cortados na altura da linha */
+/* placar rolando: janela de cada dígito com bordas esmaecidas (máscara), um pouco maior que o dígito para não cortar em repouso */
 .n .rolo{position:absolute;left:0;top:0;white-space:nowrap;line-height:1}
-.n .rolo .dg{display:inline-block;height:1em;overflow:hidden;vertical-align:top}
+.n .rolo .dg,.n .rolo .fixo{display:inline-block;vertical-align:top}
+.n .rolo .dg{height:1.3em;margin:-.15em 0;padding:.15em 0;box-sizing:border-box;overflow:hidden;
+  -webkit-mask-image:linear-gradient(transparent,#000 .15em,#000 calc(100% - .15em),transparent);mask-image:linear-gradient(transparent,#000 .15em,#000 calc(100% - .15em),transparent)}
 .n .rolo .col{display:flex;flex-direction:column}
 .n .rolo .col span{height:1em;line-height:1}

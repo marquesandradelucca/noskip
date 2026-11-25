@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232946";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232946";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232946";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124233300";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124233300";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124233300";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -160,23 +160,29 @@ function nPlacar(m, r) {
   const de = ui.placarAnt && ui.placarAnt[m.id];
   return de != null && de !== r.feitos ? `<span class="n" data-rola="${r.feitos}">${de}</span>` : `<span class="n">${r.feitos}</span>`;
 }
-// rola como um contador mecânico: só os dígitos que mudam giram, da direita para a esquerda
+// rola como um contador mecânico (no estilo do NumberFlow / numericText do iOS):
+// só os dígitos que mudam giram; movimento de mola (easing linear() gerado a partir de uma mola amortecida),
+// as bordas da "janela" do dígito esmaecem (máscara) e o dígito que sai some enquanto o novo aparece.
+const MOLA = (() => { // mola levemente subamortecida: um quique pequeno e suave, sem tranco
+  const z = 0.72, T = 0.9, w = 6.9 / (z * T), wd = w * Math.sqrt(1 - z * z), pts = [];
+  for (let i = 0; i <= 60; i++) { const t = i / 60 * T; pts.push((1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t))).toFixed(4)); }
+  pts[60] = "1"; return { easing: `linear(${pts.join(",")})`, dur: T * 1000 };
+})();
 function rolaNumero(el, de, para) {
   const a = String(de), b = String(para), cor = getComputedStyle(el).color;
   el.textContent = b; el.style.position = "relative"; el.style.color = "transparent";
   const o = document.createElement("span"); o.className = "rolo"; o.style.color = cor;
-  const col = (x, y) => `<span class="dg"><span class="col"><span>${x}</span><span>${y}</span></span></span>`;
-  o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span>${c}</span>` : col(a[i], c)).join("") : col(a, b);
+  const col = (x, y) => `<span class="dg"><span class="col"><span class="sai">${x}</span><span class="entra">${y}</span></span></span>`;
+  o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span class="fixo">${c}</span>` : col(a[i], c)).join("") : col(a, b);
   el.appendChild(o);
-  const cols = [...o.querySelectorAll(".col")].reverse();
-  // espera um pouco depois que a Home aparece e gira com um quique (passa do ponto, volta e assenta)
-  const ESPERA = 380, DUR = 720, PASSO = 90;
-  cols.forEach((c, i) => c.animate([
-    { transform: "translateY(0)", easing: "cubic-bezier(.4,0,.6,1)" },
-    { transform: "translateY(-57%)", offset: .62, easing: "cubic-bezier(.3,0,.5,1)" },
-    { transform: "translateY(-47.5%)", offset: .84, easing: "ease-in-out" },
-    { transform: "translateY(-50%)" }], { duration: DUR, delay: ESPERA + i * PASSO, fill: "both" }));
-  setTimeout(() => { o.remove(); el.style.color = ""; }, ESPERA + DUR + cols.length * PASSO + 30);
+  const ESPERA = 380, PASSO = 70, cols = [...o.querySelectorAll(".col")].reverse();
+  cols.forEach((c, i) => {
+    const t = { delay: ESPERA + i * PASSO, fill: "both" };
+    c.animate([{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }], { ...t, duration: MOLA.dur, easing: MOLA.easing });
+    c.querySelector(".sai").animate([{ opacity: 1 }, { opacity: 0 }], { ...t, duration: MOLA.dur * .45, easing: "ease-out" });
+    c.querySelector(".entra").animate([{ opacity: 0 }, { opacity: 1 }], { ...t, duration: MOLA.dur * .5, easing: "ease-out" });
+  });
+  setTimeout(() => { o.remove(); el.style.color = ""; }, ESPERA + MOLA.dur + cols.length * PASSO + 30);
 }
 function rolaPlacares() {
   ui.placarAnt = null;
