@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234612";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234612";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234612";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234757";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234757";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234757";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -375,7 +375,7 @@ function telaCal() {
   if (!ts.length && c.sel > hoje()) h += `<p class="vazio-dica">Dia futuro.</p>`;
   return h + `</section>`;
 }
-function toggleCal() { const m = ui.cal.modo; return `<div class="chips"><button class="chip ${m === "ano" ? "on" : ""}" data-modo="ano">Ano</button><button class="chip ${m === "mes" ? "on" : ""}" data-modo="mes">Mês</button></div>`; }
+function toggleCal() { const m = ui.cal.modo; return `<div class="chips seg" data-seg="modo"><button class="chip ${m === "ano" ? "on" : ""}" data-modo="ano">Ano</button><button class="chip ${m === "mes" ? "on" : ""}" data-modo="mes">Mês</button></div>`; }
 // Como cada dia aparece nos calendários: treino branco, bônus rosa, coringa com o símbolo.
 // período especial do dia: "cj" (semana coberta pelo coringa)
 function periodo(d) {
@@ -492,7 +492,7 @@ function folhaCheckin(dataIni) {
       <div class="tipos">${Object.entries(TIPOS).map(([k, t]) => `<button class="tipo grad ${k === tipo ? "sel" : ""}" style="${G(t.grad)}" data-tipo="${k}">
         ${k === tipo ? `<span class="marca sel">${ic("check", 1.1)}</span>` : feitos.includes(k) ? `<span class="marca feito">${ic("check", 1.1)}</span>` : ""}
         <span class="etiqueta">${ic(k, .95)}${t.nome}</span></button>`).join("")}</div>
-      <div class="chips"><button class="chip ${chipDia === "hoje" ? "on" : ""}" data-dia="hoje">Hoje</button><button class="chip ${chipDia === "ontem" ? "on" : ""}" data-dia="ontem">Ontem</button><button class="chip ${chipDia === "outro" ? "on" : ""}" data-dia="escolher">${chipDia === "outro" ? curta(dia) : "Escolher…"}</button></div>
+      <div class="chips seg" data-seg="dia"><button class="chip ${chipDia === "hoje" ? "on" : ""}" data-dia="hoje">Hoje</button><button class="chip ${chipDia === "ontem" ? "on" : ""}" data-dia="ontem">Ontem</button><button class="chip ${chipDia === "outro" ? "on" : ""}" data-dia="escolher">${chipDia === "outro" ? curta(dia) : "Escolher…"}</button></div>
       ${pode.ok && pode.bonus ? `<div class="card-bonus grad" style="${G("bonus")}"><span class="etiqueta">${ic("estrela", .8)}Treino bônus</span></div>` : ""}
       ${pode.ok ? `<div class="slide"><span class="txt">Deslize para registrar</span><div class="knob">${ic("seta-dir", .9)}</div></div>` : `<div class="dica" style="text-align:center;padding:10px">${pode.motivo}</div>`}`;
     f.querySelector("[data-fechar]").onclick = () => fecharFolha();
@@ -700,16 +700,16 @@ function folhaMeta(meta, rascunho) {
     f.querySelector(".folha-in").innerHTML = `<div class="alca"></div>${cab(ed ? "Editar meta" : "Nova meta")}
       <div class="campo"><label>Nome</label><input data-c="nome" value="${esc(m.nome)}" placeholder="Ex.: Fim do ano"></div>
       <div class="campo"><label>Começa</label>
-        <div class="chips" style="margin-top:4px">${iniciosRapidos().map(([n, v]) => `<button class="chip ${m.inicio === v ? "on" : ""}" data-inicio="${v}">${n}</button>`).join("")}</div>
+        <div class="chips seg cheio" data-seg="inicio" style="margin-top:6px">${iniciosRapidos().map(([n, v]) => `<button class="chip ${m.inicio === v ? "on" : ""}" data-inicio="${v}">${n}</button>`).join("")}</div>
         <button class="campo-data" data-data="inicio">${ic("calendario", .75)}${curtaAno(m.inicio)}</button></div>
       <div class="campo"><label>Termina</label>
-        <div class="chips" style="margin-top:4px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
+        <div class="chips seg cheio" data-seg="prazo" style="margin-top:6px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
         <button class="campo-data" data-data="prazo">${ic("calendario", .75)}${curtaAno(m.prazo)}</button></div>
       <div class="campo"><label>Quantas vezes por semana?</label>
-        <div class="chips" style="margin-top:4px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
+        <div class="chips seg cheio" data-seg="freq" style="margin-top:6px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
       <div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
       <div class="ritmo-vivo"><span class="rv-n"></span><span class="rv-t">por semana</span><span class="rv-selo"></span></div>
-      <div class="campo"><label>Contar</label><div class="chips" style="margin-top:4px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
+      <div class="campo"><label>Contar</label><div class="chips seg cheio" data-seg="contar" style="margin-top:6px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
       <button class="pilula" data-salvar>${ed ? "Salvar alterações" : "Salvar meta"}</button>`;
     const ritmo = () => {
       const r = m.alvo / semanasMeta(m), selo = seloRitmo(r);
@@ -896,6 +896,26 @@ function toastInfo(txt) {
   const d = document.createElement("div"); d.className = "toast"; d.innerHTML = `<span>${txt}</span>`;
   document.body.appendChild(d); clearTimeout(toastTimer); toastTimer = setTimeout(() => sumir(d), 2500);
 }
+
+// ---------- seletores segmentados: uma pílula branca desliza até a opção escolhida (como na barra de abas) ----------
+// Funciona em qualquer ".chips.seg[data-seg]": guarda onde a pílula estava e, quando a tela é redesenhada, ela desliza até a nova opção.
+const _segPos = {};
+function posicionaSeg() {
+  document.querySelectorAll(".chips.seg[data-seg]").forEach(g => {
+    let p = g.querySelector(":scope > .seg-pilula");
+    if (!p) { p = document.createElement("span"); p.className = "seg-pilula"; g.prepend(p); }
+    const on = g.querySelector(".chip.on"), k = g.dataset.seg;
+    if (!on) { p.style.opacity = "0"; _segPos[k] = null; return; }
+    const x = on.offsetLeft, w = on.offsetWidth, ant = _segPos[k];
+    p.style.opacity = "1"; p.style.transform = `translateX(${x}px)`; p.style.width = w + "px";
+    if (ant && (ant.x !== x || ant.w !== w) && !reduzir)
+      p.animate([{ transform: `translateX(${ant.x}px)`, width: ant.w + "px" }, { transform: `translateX(${x}px)`, width: w + "px" }], { duration: 380, easing: "cubic-bezier(.3,1.25,.5,1)" });
+    _segPos[k] = { x, w };
+  });
+}
+let _segRaf = 0;
+new MutationObserver(() => { cancelAnimationFrame(_segRaf); _segRaf = requestAnimationFrame(posicionaSeg); })
+  .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
 // ---------- conta (Supabase) ----------
 let modoEntrada = "entrar";
