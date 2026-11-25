@@ -502,3 +502,4 @@ body{overflow-x:hidden}
   -webkit-mask-image:linear-gradient(transparent,#000 .15em,#000 calc(100% - .15em),transparent);mask-image:linear-gradient(transparent,#000 .15em,#000 calc(100% - .15em),transparent)}
 .rola-txt .rolo .col{display:flex;flex-direction:column}
 .rola-txt .rolo .col span{height:1em;line-height:1;white-space:pre}
+.ano,.mes{touch-action:pan-y}

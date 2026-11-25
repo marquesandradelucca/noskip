@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235742";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235742";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235742";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261125000221";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261125000221";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261125000221";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -896,7 +896,36 @@ function folhaFaixas() {
 }
 
 // ---------- eventos ----------
+// calendário: deslizar o dedo para o lado troca de mês (ou de ano). A grade acompanha o dedo; soltando
+// depois de ~50 px, vai para o próximo/anterior (com a mesma animação das setas); antes disso, volta ao lugar.
+let _sw = null, _swClick = false;
+app.addEventListener("pointerdown", e => {
+  const g = e.target.closest(".ano, .mes"); if (!g || ui.aba !== "cal") return;
+  _sw = { x: e.clientX, y: e.clientY, g, dx: 0, eixo: null };
+});
+app.addEventListener("pointermove", e => {
+  if (!_sw) return;
+  const dx = e.clientX - _sw.x, dy = e.clientY - _sw.y;
+  if (!_sw.eixo && Math.hypot(dx, dy) > 8) _sw.eixo = Math.abs(dx) > Math.abs(dy) * 1.3 ? "x" : "y";
+  if (_sw.eixo !== "x") return;
+  _sw.dx = dx; clearTimeout(segTimer);
+  _sw.g.style.transform = `translateX(${dx * .55}px)`; _sw.g.style.opacity = String(1 - Math.min(.5, Math.abs(dx) / 500));
+});
+const fimSwipe = () => {
+  if (!_sw) return; const { g, dx, eixo } = _sw; _sw = null;
+  if (eixo !== "x") return;
+  _swClick = true; setTimeout(() => _swClick = false, 50); // o toque que terminou o gesto não seleciona dia
+  if (Math.abs(dx) > 50) {
+    const dir = dx < 0 ? 1 : -1, b = app.querySelector(ui.cal.modo === "ano" ? `[data-ano="${dir}"]` : `[data-mes="${dir}"]`);
+    if (b) { b.click(); return; }
+  }
+  g.animate([{ transform: g.style.transform, opacity: g.style.opacity }, { transform: "none", opacity: 1 }], { duration: 250, easing: "cubic-bezier(.2,.8,.2,1)" });
+  g.style.transform = ""; g.style.opacity = "";
+};
+app.addEventListener("pointerup", fimSwipe); app.addEventListener("pointercancel", fimSwipe);
+
 app.addEventListener("click", e => {
+  if (_swClick && e.target.closest(".ano, .mes")) { e.stopPropagation(); return; }
   const el = e.target.closest("[data-aba],[data-acao],[data-meta],[data-dia],[data-modo],[data-mes],[data-ano],[data-marco]"); if (!el) return;
   const d = el.dataset;
   if (d.aba) { if (d.aba === ui.aba) return; const dir = ORDEM_ABAS.indexOf(d.aba) > ORDEM_ABAS.indexOf(ui.aba) ? "dir" : "esq"; ui.abaAnt = ORDEM_ABAS.indexOf(ui.aba); ui.aba = d.aba; window.scrollTo(0, 0); render(dir); return; }
