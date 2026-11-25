@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232749";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232749";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232749";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232946";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232946";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232946";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -169,8 +169,14 @@ function rolaNumero(el, de, para) {
   o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span>${c}</span>` : col(a[i], c)).join("") : col(a, b);
   el.appendChild(o);
   const cols = [...o.querySelectorAll(".col")].reverse();
-  cols.forEach((c, i) => c.animate([{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }], { duration: 520, delay: i * 80, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" }));
-  setTimeout(() => { o.remove(); el.style.color = ""; }, 520 + cols.length * 80 + 30);
+  // espera um pouco depois que a Home aparece e gira com um quique (passa do ponto, volta e assenta)
+  const ESPERA = 380, DUR = 720, PASSO = 90;
+  cols.forEach((c, i) => c.animate([
+    { transform: "translateY(0)", easing: "cubic-bezier(.4,0,.6,1)" },
+    { transform: "translateY(-57%)", offset: .62, easing: "cubic-bezier(.3,0,.5,1)" },
+    { transform: "translateY(-47.5%)", offset: .84, easing: "ease-in-out" },
+    { transform: "translateY(-50%)" }], { duration: DUR, delay: ESPERA + i * PASSO, fill: "both" }));
+  setTimeout(() => { o.remove(); el.style.color = ""; }, ESPERA + DUR + cols.length * PASSO + 30);
 }
 function rolaPlacares() {
   ui.placarAnt = null;
