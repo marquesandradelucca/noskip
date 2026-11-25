@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234312";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234312";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234312";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234612";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234612";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234612";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -573,24 +573,42 @@ function celebraMetas() {
       setTimeout(() => card.classList.remove("celebra"), 1400); }, 1300);
   }
 }
-// confete nas cores do gradiente de meta batida, saindo do mini card: sobe e se espalha, depois cai girando
+// Confete com física, no estilo do canvas-confetti: cada pedaço é lançado com velocidade e ângulo,
+// perde velocidade a cada quadro (decay), a gravidade puxa para baixo, e ele "tremula" (gira em 3D e balança)
+// como papel de verdade; vai sumindo no fim da vida. Desenhado num canvas, quadro a quadro.
 const CORES_BATIDA = ["#FF6B10", "#FFA94D", "#E03A12", "#BFD9C3", "#6F816B", "#FFFFFF"];
 function confete(camadaEl, origem, cores) {
-  const r = origem.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-  for (let i = 0; i < 46; i++) {
-    const p = document.createElement("i"); p.className = "confete";
-    const w = 5 + Math.random() * 4, h = Math.random() < .35 ? w : w * (1.6 + Math.random() * .8);
-    Object.assign(p.style, { left: cx + (Math.random() - .5) * r.width * .7 + "px", top: cy + (Math.random() - .5) * r.height * .4 + "px", width: w + "px", height: h + "px",
-      background: cores[i % cores.length], borderRadius: h === w ? "50%" : "2px" });
-    camadaEl.appendChild(p);
-    const ang = -Math.PI / 2 + (Math.random() - .5) * 2.2, v = 140 + Math.random() * 190;
-    const dx = Math.cos(ang) * v, dy = Math.sin(ang) * v, queda = 260 + Math.random() * 220, gira = (Math.random() - .5) * 900, dur = 1300 + Math.random() * 700;
-    p.animate([
-      { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
-      { transform: `translate(${dx * .85}px,${dy}px) rotate(${gira * .4}deg)`, opacity: 1, offset: .35, easing: "cubic-bezier(.3,0,.7,1)" },
-      { transform: `translate(${dx}px,${dy + queda}px) rotate(${gira}deg)`, opacity: 0 }
-    ], { duration: dur, easing: "cubic-bezier(.15,.7,.3,1)", fill: "forwards" }).finished.then(() => p.remove());
-  }
+  const dpr = Math.min(2, devicePixelRatio || 1), cv = document.createElement("canvas"); cv.className = "confete";
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; camadaEl.appendChild(cv);
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+  const r = origem.getBoundingClientRect(), pecas = [];
+  const lanca = (x, y, ang, spread, n, vel) => { for (let i = 0; i < n; i++) {
+    const a = (ang + (Math.random() - .5) * spread) * Math.PI / 180;
+    pecas.push({ x, y, a, v: vel * (.5 + Math.random() * .5), cor: cores[(Math.random() * cores.length) | 0], redondo: Math.random() < .25,
+      tilt: Math.random() * Math.PI, wob: Math.random() * 10, wobV: .05 + Math.random() * .06, tick: 0, vida: 120 + (Math.random() * 40 | 0), esc: .7 + Math.random() * .5 });
+  } };
+  // três jatos saindo do mini card: para cima e para os dois lados
+  lanca(r.left + r.width / 2, r.top + r.height * .3, -90, 70, 60, 36);
+  lanca(r.left + 12, r.top + r.height / 2, -125, 45, 30, 28);
+  lanca(r.right - 12, r.top + r.height / 2, -55, 45, 30, 28);
+  const DECAY = .91, GRAV = 2.4;
+  const quadro = () => {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    let vivas = 0;
+    for (const p of pecas) {
+      if (p.tick >= p.vida) continue; vivas++;
+      p.x += Math.cos(p.a) * p.v; p.y += Math.sin(p.a) * p.v + GRAV; p.v *= DECAY;
+      p.wob += p.wobV; p.tilt += .1; p.tick++;
+      const s = 10 * p.esc, wx = p.x + s * Math.cos(p.wob), wy = p.y + s * Math.sin(p.wob), k = Math.random() + 2;
+      const tc = Math.cos(p.tilt) * k, ts = Math.sin(p.tilt) * k;
+      ctx.globalAlpha = 1 - Math.pow(p.tick / p.vida, 3); /* some só no fim */ ctx.fillStyle = p.cor; ctx.beginPath();
+      if (p.redondo) ctx.ellipse(p.x, p.y, Math.abs(wx - p.x) * .7 + 1, Math.abs(wy - p.y) * .7 + 1, Math.PI / 10 * p.wob, 0, 2 * Math.PI);
+      else { ctx.moveTo(p.x, p.y); ctx.lineTo(wx, p.y + ts); ctx.lineTo(wx + tc, wy + ts); ctx.lineTo(p.x + tc, wy); }
+      ctx.closePath(); ctx.fill();
+    }
+    if (vivas && cv.isConnected) requestAnimationFrame(quadro); else cv.remove();
+  };
+  requestAnimationFrame(quadro);
 }
 function mostraMarco(v, depois) {
   const div = document.createElement("div"); div.className = "confirma marco-tela";

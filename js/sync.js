@@ -7,7 +7,7 @@
 // - O app lembra como cada item estava na última sincronização. O que mudou desde então sobe;
 //   o que chegou de outro aparelho desce. Se o mesmo item mudou dos dois lados, vale o mais recente.
 // - Sem internet, nada se perde: as mudanças ficam no aparelho e sobem quando a conexão voltar.
-import { estado, salvarLocal, aoSalvar, limparLocal } from "./dados.js?v=20261124234312";
+import { estado, salvarLocal, aoSalvar, limparLocal } from "./dados.js?v=20261124234612";
 
 const URL_SUPABASE = "https://bigruncntcxnckcttjuw.supabase.co";
 const CHAVE_PUBLICA = "sb_publishable_Mff_WvrBX1Qgyvbx0jn8eA_YsDL78KI"; // pública de propósito; a tabela é protegida por RLS
