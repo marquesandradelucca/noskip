@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124233300";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124233300";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124233300";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124233536";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124233536";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124233536";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -143,7 +143,7 @@ function telaHome() {
   h += r.est === "agendada" ? `<div class="card card-meta agendada" data-meta="${m.id}"><div class="nome">${esc(m.nome)}</div><div class="selo">Agendada · ${curta(m.inicio)}</div>
     <div class="placar"><span class="n">0</span><span class="d">/${m.alvo}</span></div>
     <div class="status">${linhaStatus(m, r)}</div>${botao}</div>` : `<div class="card-meta grad" style="${G(gradMeta(r))}" data-meta="${m.id}">
-    <div class="nome sombra-txt">${esc(m.nome)}</div>${r.est === "batida" ? '<div class="selo">Meta batida</div>' : ""}
+    <div class="nome sombra-txt">${esc(m.nome)}</div>${r.est === "batida" ? `<div class="selo${ui.batidaNova && ui.batidaNova.includes(m.id) ? " espera" : ""}">Meta batida</div>` : ""}
     <div class="placar">${nPlacar(m, r)}<span class="d sombra-txt">/${m.alvo}</span></div>
     <div class="status sombra-txt">${linhaStatus(m, r)}</div>${botao}</div>`;
   h += cardSemana();
@@ -522,6 +522,7 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   const placarAnt = Object.fromEntries(metasAtivas().map(m => [m.id, resumo(m).feitos]));
   const t = registrar(dia, tipo); if (!t) return;
   ui.placarAnt = placarAnt;
+  ui.batidaNova = metasAtivas().filter(m => placarAnt[m.id] < m.alvo && resumo(m).feitos >= m.alvo).map(m => m.id); // metas que este check-in completou
   fecharFolha(true);
   ui.cal.sel = dia; ui.cal.aberto = true;
   ui.pontoNovo = { dia, bonus: t.bonus }; // o ponto do dia acende na Home quando o "+1" sair
@@ -542,7 +543,7 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   div.innerHTML = `<div class="mais1">+1</div><div class="resto">${sub}<div class="tag">${t.bonus ? "Treino bônus" : seq.atual > seqAntes ? "Sequência · " + seq.atual + " semanas" : "Sequência mantida · " + seq.atual + " semanas"}</div></div>`;
   document.body.appendChild(div);
   // o ponto acende e o placar rola quando a Home fica visível (depois do "+1" e, se houver, da tela de novo marco)
-  const revela = () => { acendePonto(); rolaPlacares(); };
+  const revela = () => { acendePonto(); rolaPlacares(); celebraMetas(); };
   const fim = () => { div.remove(); if (novo) mostraMarco(novo, () => { revela(); toastDesfazer(t); }); else { revela(); toastDesfazer(t); } };
   div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, 2000);
 }
@@ -555,6 +556,17 @@ function acendePonto() {
   if (reduzir) return;
   if (pn.bonus) { const b = p.querySelector(".bonus"); if (b) b.classList.add("acende"); }
   else p.classList.add("acende");
+}
+// meta batida neste check-in: depois que o placar rola, um brilho atravessa o card e o selo "Meta batida" entra com um pulso
+function celebraMetas() {
+  const ids = ui.batidaNova || []; ui.batidaNova = null;
+  for (const id of ids) {
+    const card = app.querySelector(`[data-meta="${id}"]`); if (!card) continue;
+    const selo = card.querySelector(".selo");
+    if (reduzir) { if (selo) selo.classList.remove("espera"); continue; }
+    setTimeout(() => { card.classList.add("celebra"); if (selo) { selo.classList.remove("espera"); selo.classList.add("pop"); } vibrar([30, 50, 30]);
+      setTimeout(() => card.classList.remove("celebra"), 1400); }, 1300);
+  }
 }
 function mostraMarco(v, depois) {
   const div = document.createElement("div"); div.className = "confirma marco-tela";
