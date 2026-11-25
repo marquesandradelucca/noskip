@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261125000221";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261125000221";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261125000221";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261125000330";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261125000330";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261125000330";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -37,7 +37,7 @@ function render(anim) {
   if (ui.detalhe) { const m = estado.metas.find(x => x.id === ui.detalhe); if (m) { app.innerHTML = telaDetalhe(m); animar(anim); return; } ui.detalhe = null; }
   const t = ui.aba === "home" ? telaHome() : ui.aba === "cal" ? telaCal() : telaConq();
   app.innerHTML = t + abas();
-  animar(anim); animarAbas(); animarCal();
+  animar(anim); animarAbas(); animarCal(); animarConq();
   if (ui.aba === "home") checaPrazos();
 }
 function animar(anim) {
@@ -106,6 +106,17 @@ const ORDEM_ABAS = ["home", "cal", "conq"];
 
 // troca de aba: a pílula desliza da aba anterior até a nova (com um leve "quique") e o ícone novo dá um pulinho
 // calendário: ao trocar de mês/ano pelas setas, a grade e o título deslizam para o lado (como virar a página)
+// Conquistas: ao abrir a aba, os marcos aparecem um a um (conquistados primeiro, depois os bloqueados e o bônus)
+// e o número da Sequência conta até o valor
+function animarConq() {
+  if (!ui.conqAnim) return; ui.conqAnim = false;
+  if (ui.aba !== "conq" || reduzir) return;
+  const tiles = [...app.querySelectorAll(".marco")];
+  const ordem = [...tiles.filter(t => t.classList.contains("grad") && !t.classList.contains("bonus")), ...tiles.filter(t => t.classList.contains("bloq")), ...tiles.filter(t => t.classList.contains("bonus"))];
+  ordem.forEach((t, i) => t.animate([{ opacity: 0, transform: "translateY(12px) scale(.82)" }, { opacity: 1, transform: "none" }],
+    { duration: 460, delay: 140 + i * 50, easing: "cubic-bezier(.3,1.35,.5,1)", fill: "backwards" }));
+  const n = app.querySelector(".seq-n"); if (n) { n.dataset.contar = n.dataset.n; contarNumeros(n.parentElement); }
+}
 function animarCal() {
   const dir = ui.calDir; ui.calDir = 0; if (!dir || reduzir) return;
   const els = app.querySelectorAll(".mes-nav .titulo, .tela > .sub, .ano, .mes");
@@ -447,7 +458,7 @@ function telaConq() {
   const seq = sequencia(); const fx = faixa(seq); const tot = totalTreinos(); const rec = recordes(); const ehRecorde = seq.atual > 0 && seq.atual >= seq.recorde;
   let h = `<section class="tela"><div class="titulo">Conquistas</div>
   <div class="card-seq grad grad-faixa" style="${G("seq-" + fx.id)}"><div class="rot sombra-txt">Sequência</div>
-    <div class="placar"><span class="n">${seq.atual}</span><span class="d sombra-txt">${seq.atual === 1 ? "semana" : "semanas"} ${ehRecorde ? "" : "· recorde " + seq.recorde}</span></div>
+    <div class="placar"><span class="n seq-n" data-n="${seq.atual}">${seq.atual}</span><span class="d sombra-txt">${seq.atual === 1 ? "semana" : "semanas"} ${ehRecorde ? "" : "· recorde " + seq.recorde}</span></div>
     <div style="display:flex;gap:8px">${ehRecorde ? `<span class="chip-v chip-rec">${ic("medalha", .55)}Recorde</span>` : `<span class="chip-v">${fx.nome}</span>`}<span class="chip-l">${ic("coringa", .65)}${seq.coringasDisp} ${seq.coringasDisp === 1 ? "coringa disponível" : "coringas disponíveis"}</span></div></div>
   <div class="grade3">`;
   // mostra os conquistados + os 2 próximos (fecha a linha de 3 junto com a placa de bônus)
@@ -928,7 +939,7 @@ app.addEventListener("click", e => {
   if (_swClick && e.target.closest(".ano, .mes")) { e.stopPropagation(); return; }
   const el = e.target.closest("[data-aba],[data-acao],[data-meta],[data-dia],[data-modo],[data-mes],[data-ano],[data-marco]"); if (!el) return;
   const d = el.dataset;
-  if (d.aba) { if (d.aba === ui.aba) return; const dir = ORDEM_ABAS.indexOf(d.aba) > ORDEM_ABAS.indexOf(ui.aba) ? "dir" : "esq"; ui.abaAnt = ORDEM_ABAS.indexOf(ui.aba); ui.aba = d.aba; window.scrollTo(0, 0); render(dir); return; }
+  if (d.aba) { if (d.aba === ui.aba) return; const dir = ORDEM_ABAS.indexOf(d.aba) > ORDEM_ABAS.indexOf(ui.aba) ? "dir" : "esq"; ui.abaAnt = ORDEM_ABAS.indexOf(ui.aba); ui.aba = d.aba; ui.conqAnim = d.aba === "conq"; window.scrollTo(0, 0); render(dir); return; }
   if (d.acao) { e.stopPropagation();
     const a = d.acao;
     if (a === "checkin") folhaCheckin();
