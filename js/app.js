@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235022";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235022";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235022";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235407";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235407";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235407";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -924,8 +924,9 @@ function posicionaSeg() {
     _segPos[k] = { x, w };
   });
 }
-let _segRaf = 0;
-new MutationObserver(() => { cancelAnimationFrame(_segRaf); _segRaf = requestAnimationFrame(posicionaSeg); })
+// roda logo após cada mudança na página (antes de desenhar a tela), ignorando o que não mexe nos seletores
+// (ex.: o número do ritmo, que muda a cada quadro enquanto conta)
+new MutationObserver(ms => { if (ms.some(x => !(x.target.closest && x.target.closest(".rv-n")) && !(x.target.parentElement && x.target.parentElement.closest(".rv-n")))) posicionaSeg(); })
   .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
 // ---------- conta (Supabase) ----------
