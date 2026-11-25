@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232456";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232456";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232456";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232749";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232749";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232749";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -144,17 +144,39 @@ function telaHome() {
     <div class="placar"><span class="n">0</span><span class="d">/${m.alvo}</span></div>
     <div class="status">${linhaStatus(m, r)}</div>${botao}</div>` : `<div class="card-meta grad" style="${G(gradMeta(r))}" data-meta="${m.id}">
     <div class="nome sombra-txt">${esc(m.nome)}</div>${r.est === "batida" ? '<div class="selo">Meta batida</div>' : ""}
-    <div class="placar"><span class="n">${r.feitos}</span><span class="d sombra-txt">/${m.alvo}</span></div>
+    <div class="placar">${nPlacar(m, r)}<span class="d sombra-txt">/${m.alvo}</span></div>
     <div class="status sombra-txt">${linhaStatus(m, r)}</div>${botao}</div>`;
   h += cardSemana();
   h += `<div class="grade2">`;
   for (const o of metas.slice(1)) { const ro = resumo(o);
     if (ro.est === "agendada") { h += `<div class="tile agendada" data-meta="${o.id}"><div class="nome">${esc(o.nome)}</div><div class="quando">começa ${curta(o.inicio)}</div><div class="placar"><span class="n">0</span><span class="d">/${o.alvo}</span></div></div>`; continue; }
-    h += `<div class="tile grad" style="${G(gradMeta(ro))}" data-meta="${o.id}"><div class="nome sombra-txt">${esc(o.nome)}</div><div class="placar"><span class="n">${ro.feitos}</span><span class="d">/${o.alvo}</span></div></div>`; }
+    h += `<div class="tile grad" style="${G(gradMeta(ro))}" data-meta="${o.id}"><div class="nome sombra-txt">${esc(o.nome)}</div><div class="placar">${nPlacar(o, ro)}<span class="d">/${o.alvo}</span></div></div>`; }
   h += `<button class="tile novo" data-acao="nova-meta">${ic("mais", 1.6)}<span style="font-size:13px;font-weight:500">Nova meta</span></button></div></section>`;
   return h;
 }
 
+// número do placar: logo após o check-in mostra o valor de antes; ele rola para o novo quando o "+1" sai
+function nPlacar(m, r) {
+  const de = ui.placarAnt && ui.placarAnt[m.id];
+  return de != null && de !== r.feitos ? `<span class="n" data-rola="${r.feitos}">${de}</span>` : `<span class="n">${r.feitos}</span>`;
+}
+// rola como um contador mecânico: só os dígitos que mudam giram, da direita para a esquerda
+function rolaNumero(el, de, para) {
+  const a = String(de), b = String(para), cor = getComputedStyle(el).color;
+  el.textContent = b; el.style.position = "relative"; el.style.color = "transparent";
+  const o = document.createElement("span"); o.className = "rolo"; o.style.color = cor;
+  const col = (x, y) => `<span class="dg"><span class="col"><span>${x}</span><span>${y}</span></span></span>`;
+  o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span>${c}</span>` : col(a[i], c)).join("") : col(a, b);
+  el.appendChild(o);
+  const cols = [...o.querySelectorAll(".col")].reverse();
+  cols.forEach((c, i) => c.animate([{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }], { duration: 520, delay: i * 80, easing: "cubic-bezier(.22,1,.36,1)", fill: "forwards" }));
+  setTimeout(() => { o.remove(); el.style.color = ""; }, 520 + cols.length * 80 + 30);
+}
+function rolaPlacares() {
+  ui.placarAnt = null;
+  app.querySelectorAll(".n[data-rola]").forEach(el => { const para = +el.dataset.rola, de = +el.textContent; el.removeAttribute("data-rola");
+    if (reduzir) el.textContent = para; else rolaNumero(el, de, para); });
+}
 function cardSemana() {
   const ini = inicioSemana(hoje()); const seq = sequencia(); const h = hoje();
   let pts = "";
@@ -485,7 +507,9 @@ function montaSlide(sl, ok) {
 const COR_TIPO = { musculacao: "255,106,26", cardio: "180,234,60", outro: "142,134,242" };
 function confirmaCheckin(dia, tipo, ox, oy) {
   const antes = totalTreinos(); const seqAntes = sequencia().atual;
+  const placarAnt = Object.fromEntries(metasAtivas().map(m => [m.id, resumo(m).feitos]));
   const t = registrar(dia, tipo); if (!t) return;
+  ui.placarAnt = placarAnt;
   fecharFolha(true);
   ui.cal.sel = dia; ui.cal.aberto = true;
   ui.pontoNovo = { dia, bonus: t.bonus }; // o ponto do dia acende na Home quando o "+1" sair
@@ -505,7 +529,9 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   if (m) { const r = resumo(m); sub = `<div class="t">${r.feitos} de ${m.alvo}</div><div class="s">${r.faltam ? "faltam " + r.faltam + " · " + r.diasPrazo + " dias" : "meta batida!"}</div>`; }
   div.innerHTML = `<div class="mais1">+1</div><div class="resto">${sub}<div class="tag">${t.bonus ? "Treino bônus" : seq.atual > seqAntes ? "Sequência · " + seq.atual + " semanas" : "Sequência mantida · " + seq.atual + " semanas"}</div></div>`;
   document.body.appendChild(div);
-  const fim = () => { div.remove(); acendePonto(); if (novo) mostraMarco(novo, () => toastDesfazer(t)); else toastDesfazer(t); };
+  // o ponto acende e o placar rola quando a Home fica visível (depois do "+1" e, se houver, da tela de novo marco)
+  const revela = () => { acendePonto(); rolaPlacares(); };
+  const fim = () => { div.remove(); if (novo) mostraMarco(novo, () => { revela(); toastDesfazer(t); }); else { revela(); toastDesfazer(t); } };
   div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, 2000);
 }
 
