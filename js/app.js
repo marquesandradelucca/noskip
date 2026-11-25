@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235407";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235407";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235407";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235630";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235630";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235630";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -168,14 +168,17 @@ const MOLA = (() => { // mola levemente subamortecida: um quique pequeno e suave
   for (let i = 0; i <= 60; i++) { const t = i / 60 * T; pts.push((1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + z * w / wd * Math.sin(wd * t))).toFixed(4)); }
   pts[60] = "1"; return { easing: `linear(${pts.join(",")})`, dur: T * 1000 };
 })();
-function rolaNumero(el, de, para) {
+function rolaNumero(el, de, para, espera = 380, porPalavra = false) {
   const a = String(de), b = String(para), cor = getComputedStyle(el).color;
   el.textContent = b; el.style.position = "relative"; el.style.color = "transparent";
   const o = document.createElement("span"); o.className = "rolo"; o.style.color = cor;
   const col = (x, y) => `<span class="dg"><span class="col"><span class="sai">${x}</span><span class="entra">${y}</span></span></span>`;
-  o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span class="fixo">${c}</span>` : col(a[i], c)).join("") : col(a, b);
+  if (porPalavra) { // datas: dia, mês e ano rolam cada um inteiro
+    const pa = a.split(" "), pb = b.split(" ");
+    o.innerHTML = pb.map((w, i) => w === pa[i] ? `<span class="fixo">${w}</span>` : col(pa[i] || "", w)).join('<span class="fixo"> </span>');
+  } else o.innerHTML = a.length === b.length ? [...b].map((c, i) => c === a[i] ? `<span class="fixo">${c}</span>` : col(a[i], c)).join("") : col(a, b);
   el.appendChild(o);
-  const ESPERA = 380, PASSO = 70, cols = [...o.querySelectorAll(".col")].reverse();
+  const ESPERA = espera, PASSO = 70, cols = [...o.querySelectorAll(".col")].reverse();
   cols.forEach((c, i) => {
     const t = { delay: ESPERA + i * PASSO, fill: "both" };
     c.animate([{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }], { ...t, duration: MOLA.dur, easing: MOLA.easing });
@@ -694,7 +697,8 @@ function folhaMeta(meta, rascunho) {
   const m = rascunho || (meta ? { ...meta } : { id: novoId(), nome: "", alvo: 0, inicio: hoje(), prazo: "", contar: "todos", status: "ativa" });
   if (!ed && !rascunho) { m.prazo = prazosRapidos(m.inicio)[2][1]; m.alvo = Math.max(1, Math.ceil(3 * semanasMeta(m) - 0.05)); }
   const totalPara = v => Math.max(1, Math.ceil(v * semanasMeta(m) - 0.05));
-  let ritmoMostrado = null, seloMostrado = null, rafRitmo = 0; // para o número ir até o valor novo e o selo trocar com um pulinho // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
+  let ritmoMostrado = null, seloMostrado = null, rafRitmo = 0;
+  let alvoMostrado = null, rafAlvo = 0; const datasMostradas = {}; // total e datas animam quando mudam por um atalho // para o número ir até o valor novo e o selo trocar com um pulinho // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
   const desenha = f => {
     const rapidos = prazosRapidos(m.inicio);
     const freqAtual = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
@@ -702,10 +706,10 @@ function folhaMeta(meta, rascunho) {
       <div class="campo"><label>Nome</label><input data-c="nome" value="${esc(m.nome)}" placeholder="Ex.: Fim do ano"></div>
       <div class="campo"><label>Começa</label>
         <div class="chips seg cheio" data-seg="inicio" style="margin-top:6px">${iniciosRapidos().map(([n, v]) => `<button class="chip ${m.inicio === v ? "on" : ""}" data-inicio="${v}">${n}</button>`).join("")}</div>
-        <button class="campo-data" data-data="inicio">${ic("calendario", .75)}${curtaAno(m.inicio)}</button></div>
+        <button class="campo-data" data-data="inicio">${ic("calendario", .75)}<span class="dt-txt rola-txt">${curtaAno(m.inicio)}</span></button></div>
       <div class="campo"><label>Termina</label>
         <div class="chips seg cheio" data-seg="prazo" style="margin-top:6px">${rapidos.map(([n, v]) => `<button class="chip ${m.prazo === v ? "on" : ""}" data-prazo="${v}">${n}</button>`).join("")}</div>
-        <button class="campo-data" data-data="prazo">${ic("calendario", .75)}${curtaAno(m.prazo)}</button></div>
+        <button class="campo-data" data-data="prazo">${ic("calendario", .75)}<span class="dt-txt rola-txt">${curtaAno(m.prazo)}</span></button></div>
       <div class="campo"><label>Quantas vezes por semana?</label>
         <div class="chips seg cheio" data-seg="freq" style="margin-top:6px">${[2, 3, 4, 5].map(v => `<button class="chip ${freqAtual === v ? "on" : ""}" data-freq="${v}">${v}×</button>`).join("")}</div></div>
       <div class="campo"><label>Total de treinos</label><input data-c="alvo" type="number" inputmode="numeric" min="1" value="${m.alvo}"></div>
@@ -730,10 +734,24 @@ function folhaMeta(meta, rascunho) {
       f.querySelectorAll("[data-freq]").forEach(b => b.classList.toggle("on", +b.dataset.freq === fq));
     };
     ritmo();
+    // total de treinos: conta do valor anterior até o novo (quando muda por frequência/prazo, não quando você digita)
+    const inp = f.querySelector('[data-c="alvo"]');
+    if (alvoMostrado != null && alvoMostrado !== m.alvo && !reduzir) {
+      const de = alvoMostrado, para = m.alvo, t0 = performance.now(); cancelAnimationFrame(rafAlvo);
+      const passo = t => { const k = Math.min(1, (t - t0) / 450), e = 1 - Math.pow(1 - k, 3); inp.value = Math.round(de + (para - de) * e); if (k < 1) rafAlvo = requestAnimationFrame(passo); };
+      inp.value = de; rafAlvo = requestAnimationFrame(passo);
+    }
+    alvoMostrado = m.alvo;
+    // datas: só os caracteres que mudam rolam, como o placar
+    for (const k of ["inicio", "prazo"]) {
+      const el = f.querySelector(`[data-data="${k}"] .dt-txt`), ant = datasMostradas[k];
+      if (el && ant && ant !== m[k] && !reduzir) rolaNumero(el, curtaAno(ant), curtaAno(m[k]), 0, true);
+      datasMostradas[k] = m[k];
+    }
     f.querySelector("[data-fechar]").onclick = () => fecharFolha();
     f.querySelectorAll("[data-c]").forEach(i => i.oninput = () => {
       const k = i.dataset.c;
-      if (k === "alvo") { m.alvo = Math.max(1, +i.value || 1); ritmo(); return; }
+      if (k === "alvo") { cancelAnimationFrame(rafAlvo); m.alvo = Math.max(1, +i.value || 1); alvoMostrado = m.alvo; ritmo(); return; }
       if (k === "nome") { m.nome = i.value; return; }
       if (!i.value) return;
       const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo); // se veio de uma frequência, mantém a frequência
