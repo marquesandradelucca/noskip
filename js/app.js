@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124231026";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124231026";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124231026";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124232158";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124232158";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124232158";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -160,7 +160,8 @@ function cardSemana() {
   let pts = "";
   for (let i = 0; i < 7; i++) {
     const d = somaDias(ini, i); const ts = treinosDoDia(d);
-    pts += `<div class="ponto ${ts.length ? "aceso" : ""} ${d === h ? "hoje" : ""}">${ts.some(t => t.bonus) ? '<span class="bonus"></span>' : ""}</div>`;
+    const espera = ui.pontoNovo && ui.pontoNovo.dia === d ? (ui.pontoNovo.bonus ? " espera-b" : " espera") : ""; // vai acender depois do "+1"
+    pts += `<div class="ponto ${ts.length ? "aceso" : ""} ${d === h ? "hoje" : ""}${espera}" data-d="${d}">${ts.some(t => t.bonus) ? '<span class="bonus"></span>' : ""}</div>`;
   }
   const txt = seq.coringaAgora ? `coringa usado · ${seq.atual} semanas` : `${seq.atual} ${seq.atual === 1 ? "semana seguida" : "semanas seguidas"}`;
   // aviso nos 2 últimos dias da semana, se ainda não treinou e há sequência a perder
@@ -487,6 +488,7 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   const t = registrar(dia, tipo); if (!t) return;
   fecharFolha(true);
   ui.cal.sel = dia; ui.cal.aberto = true;
+  ui.pontoNovo = { dia, bonus: t.bonus }; // o ponto do dia acende na Home quando o "+1" sair
   render();
   const metas = metasAtivas(); const m = metas[0];
   const novo = MARCOS.find(v => antes < v && totalTreinos() >= v);
@@ -503,10 +505,19 @@ function confirmaCheckin(dia, tipo, ox, oy) {
   if (m) { const r = resumo(m); sub = `<div class="t">${r.feitos} de ${m.alvo}</div><div class="s">${r.faltam ? "faltam " + r.faltam + " · " + r.diasPrazo + " dias" : "meta batida!"}</div>`; }
   div.innerHTML = `<div class="mais1">+1</div><div class="resto">${sub}<div class="tag">${t.bonus ? "Treino bônus" : seq.atual > seqAntes ? "Sequência · " + seq.atual + " semanas" : "Sequência mantida · " + seq.atual + " semanas"}</div></div>`;
   document.body.appendChild(div);
-  const fim = () => { div.remove(); if (novo) mostraMarco(novo, () => toastDesfazer(t)); else toastDesfazer(t); };
+  const fim = () => { div.remove(); acendePonto(); if (novo) mostraMarco(novo, () => toastDesfazer(t)); else toastDesfazer(t); };
   div.onclick = fim; setTimeout(() => { if (div.isConnected) fim(); }, 2000);
 }
 
+// ponto do dia no card Semana: acende (como na splash); se foi bônus, a bolinha rosa aparece com glow
+function acendePonto() {
+  const pn = ui.pontoNovo; ui.pontoNovo = null; if (!pn) return;
+  const p = app.querySelector(`.ponto[data-d="${pn.dia}"]`); if (!p) return;
+  p.classList.remove("espera", "espera-b");
+  if (reduzir) return;
+  if (pn.bonus) { const b = p.querySelector(".bonus"); if (b) b.classList.add("acende"); }
+  else p.classList.add("acende");
+}
 function mostraMarco(v, depois) {
   const div = document.createElement("div"); div.className = "confirma marco-tela";
   div.innerHTML = `<div class="marco-palco"><div class="marco-big bloqueado"><span class="num">${v}</span><span class="varre"></span></div></div>

@@ -451,3 +451,10 @@ body{overflow-x:hidden}
 .abas-pilula{position:absolute;left:6px;top:6px;width:82px;height:50px;border-radius:99px;background:var(--s3);transform:translateX(calc(var(--i) * 84px));pointer-events:none}
 .aba{position:relative;z-index:1}
 .aba.ativa{background:transparent}
+/* check-in: o ponto do dia espera apagado e acende quando o "+1" sai */
+.ponto.espera{background:var(--s3);box-shadow:none}
+.ponto.espera .bonus,.ponto.espera-b .bonus{opacity:0}
+.ponto.acende{animation:pt-acende .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes pt-acende{0%{background:var(--s3);box-shadow:none;transform:scale(1)}45%{background:#fff;box-shadow:0 0 16px rgba(255,255,255,.75);transform:scale(1.2)}100%{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.55);transform:scale(1)}}
+.ponto .bonus.acende{animation:pt-bonus .6s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pt-bonus{0%{opacity:0;transform:scale(0)}50%{opacity:1;transform:scale(1.8);box-shadow:0 0 12px 3px var(--rosa)}100%{opacity:1;transform:scale(1);box-shadow:0 0 8px var(--rosa)}}
