@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124222611";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124222611";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124222611";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124222923";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124222923";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124222923";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -320,6 +320,8 @@ function telaCal() {
       <div class="sub">${mesTs.length} treinos · ${mesTs.filter(t => t.bonus).length} bônus</div>` + toggleCal() + gradeMes(a, mm - 1);
   }
   h += `<div class="titulo-dia">${comDia(c.sel)}</div>`;
+  for (const m of prazosDoDia(c.sel)) { const r = resumo(m);
+    h += `<div class="linha prazo-linha" data-meta="${m.id}"><span class="pz-dot" style="background:${corPrazo(m)}"></span><span class="tx"><span class="t1">Prazo · ${esc(m.nome)}</span><span class="t2">${r.feitos} de ${m.alvo} · ${r.est === "batida" ? "meta batida" : r.encerrou ? "encerrada" : r.faltam + (r.faltam === 1 ? " treino falta" : " treinos faltam")}</span></span><span class="seta">›</span></div>`; }
   const ts = treinosDoDia(c.sel);
   for (const t of ts) h += `<div class="linha" data-segurar="${t.id}"><span class="tx"><span class="t1">${TIPOS[t.tipo].nome}${t.bonus ? " · bônus" : ""}</span><span class="t2">${t.hora ? t.hora + " · " : ""}${t.bonus ? "2º treino do dia" : "segure para desfazer"}</span></span>${t.bonus ? '<span class="pt-rosa"></span>' : ""}</div>`;
   if (c.sel <= hoje() && ts.length < 2) h += `<button class="add-dia" data-acao="checkin-dia">${ic("mais", .8)}Adicionar treino neste dia</button>`;
@@ -354,9 +356,13 @@ function diasCoringa() { // marca o 1º dia de cada semana coberta pelo coringa
   if (k !== _corChave) { _corChave = k; _cor = new Set([...sequencia().cobertas]); }
   return _cor;
 }
+// prazos de meta no calendário: cor do estado da meta (a mesma do gradiente dela)
+const COR_EST = { afrente: "#FE710F", noritmo: "#469D95", apertado: "#4C569F", batida: "#FE851B", agendada: "#8E8E93" };
+function prazosDoDia(d) { return estado.metas.filter(m => m.prazo === d); }
+function corPrazo(m) { return COR_EST[resumo(m).est] || "#8E8E93"; }
 function legendaCal() {
   const it = (c, n) => `<span><i class="lg ${c}"></i>${n}</span>`;
-  return `<div class="leg-cal">${it("m", "Treino")}${it("b", "Bônus")}${it("cj", "Coringa")}</div>`;
+  return `<div class="leg-cal">${it("m", "Treino")}${it("b", "Bônus")}${it("cj", "Coringa")}${it("prazo", "Prazo")}</div>`;
 }
 function gradeAno(ano) {
   // o ano inteiro em ordem, dia após dia, em 15 fileiras
@@ -364,7 +370,8 @@ function gradeAno(ano) {
   let s = `<div class="ano" style="--cols:${cols}">`;
   for (let i = 0; i < n; i++) {
     const dt = somaDias(ano + "-01-01", i); const e = estiloDia(dt); const col = i % cols;
-    s += `<i data-dia="${dt}" class="${e.c}${capsula(dt, col === 0, col === cols - 1 || i === n - 1)} ${dt === hoje() ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}"></i>`;
+    const pz = prazosDoDia(dt)[0];
+    s += `<i data-dia="${dt}" class="${e.c}${capsula(dt, col === 0, col === cols - 1 || i === n - 1)} ${dt === hoje() ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}${pz ? " prazo" : ""}"${pz ? ` style="--cor:${corPrazo(pz)}"` : ""}></i>`;
   }
   return s + `</div>` + legendaCal();
 }
@@ -374,7 +381,7 @@ function gradeMes(a, m) {
   let s = `<div class="mes">${letrasSemana().map(l => `<span class="ds">${l}</span>`).join("")}`;
   for (let i = 0; i < off; i++) s += "<span></span>";
   for (let d = 1; d <= ult; d++) { const dt = iso(new Date(a, m, d)); const e = estiloDia(dt); const col = (off + d - 1) % 7;
-    s += `<button class="dia ${e.c}${capsula(dt, col === 0 || d === 1, col === 6 || d === ult)} ${dt === h ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}" data-dia="${dt}">${d}${e.txt ? `<span class="cj-tag">${ic("coringa", .6)}</span>` : ""}</button>`; }
+    s += `<button class="dia ${e.c}${capsula(dt, col === 0 || d === 1, col === 6 || d === ult)} ${dt === h ? "hoje" : ""} ${dt === ui.cal.sel ? "sel" : ""}" data-dia="${dt}">${d}${e.txt ? `<span class="cj-tag">${ic("coringa", .6)}</span>` : ""}${(() => { const pz = prazosDoDia(dt)[0]; return pz ? `<span class="pz-tag ${e.txt || e.c === "b" ? "esq" : ""}" style="--cor:${corPrazo(pz)}"></span>` : ""; })()}</button>`; }
   return s + "</div>" + legendaCal();
 }
 
