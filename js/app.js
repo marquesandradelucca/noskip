@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124234757";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124234757";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124234757";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124235022";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124235022";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124235022";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -693,7 +693,8 @@ function folhaMeta(meta, rascunho) {
   const ed = !!meta;
   const m = rascunho || (meta ? { ...meta } : { id: novoId(), nome: "", alvo: 0, inicio: hoje(), prazo: "", contar: "todos", status: "ativa" });
   if (!ed && !rascunho) { m.prazo = prazosRapidos(m.inicio)[2][1]; m.alvo = Math.max(1, Math.ceil(3 * semanasMeta(m) - 0.05)); }
-  const totalPara = v => Math.max(1, Math.ceil(v * semanasMeta(m) - 0.05)); // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
+  const totalPara = v => Math.max(1, Math.ceil(v * semanasMeta(m) - 0.05));
+  let ritmoMostrado = null, seloMostrado = null, rafRitmo = 0; // para o número ir até o valor novo e o selo trocar com um pulinho // arredonda para cima: o ritmo nunca fica abaixo da frequência escolhida
   const desenha = f => {
     const rapidos = prazosRapidos(m.inicio);
     const freqAtual = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
@@ -712,9 +713,19 @@ function folhaMeta(meta, rascunho) {
       <div class="campo"><label>Contar</label><div class="chips seg cheio" data-seg="contar" style="margin-top:6px">${[["todos", "Todos os treinos"], ["dias", "Só dias"], ["cardio", "Só cardio"]].map(([k, n]) => `<button class="chip ${m.contar === k ? "on" : ""}" data-contar="${k}">${n}</button>`).join("")}</div></div>
       <button class="pilula" data-salvar>${ed ? "Salvar alterações" : "Salvar meta"}</button>`;
     const ritmo = () => {
-      const r = m.alvo / semanasMeta(m), selo = seloRitmo(r);
-      f.querySelector(".rv-n").textContent = "≈ " + r.toFixed(1).replace(".", ",");
+      const r = m.alvo / semanasMeta(m), selo = seloRitmo(r), nEl = f.querySelector(".rv-n");
+      const fmt = v => "≈ " + v.toFixed(1).replace(".", ",");
+      // número: vai do valor que estava na tela até o novo (≈ 0,45 s, desacelerando)
+      cancelAnimationFrame(rafRitmo);
+      const de = ritmoMostrado ?? r, t0 = performance.now();
+      if (reduzir || Math.abs(de - r) < .05) { nEl.textContent = fmt(r); ritmoMostrado = r; }
+      else { const passo = t => { const k = Math.min(1, (t - t0) / 450), e = 1 - Math.pow(1 - k, 3), v = de + (r - de) * e;
+          nEl.textContent = fmt(v); ritmoMostrado = v; if (k < 1) rafRitmo = requestAnimationFrame(passo); else ritmoMostrado = r; };
+        nEl.textContent = fmt(de); rafRitmo = requestAnimationFrame(passo); }
+      // selo: troca de cor suavemente; quando muda de faixa, dá um pulinho
       const el = f.querySelector(".rv-selo"); el.textContent = selo; el.dataset.s = selo;
+      if (seloMostrado && seloMostrado !== selo && !reduzir) el.animate([{ transform: "scale(.8)", opacity: .4 }, { transform: "scale(1.1)", opacity: 1, offset: .6 }, { transform: "scale(1)" }], { duration: 380, easing: "ease-out" });
+      seloMostrado = selo;
       const fq = [2, 3, 4, 5].find(v => totalPara(v) === m.alvo);
       f.querySelectorAll("[data-freq]").forEach(b => b.classList.toggle("on", +b.dataset.freq === fq));
     };
