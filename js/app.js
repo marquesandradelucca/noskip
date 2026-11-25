@@ -1,8 +1,8 @@
 // NoSkip — telas e interações.
 import { estado, salvar, novoId, TIPOS, hoje, data, iso, somaDias, difDias, inicioSemana, curta, curtaAno, comDia, mesLongo, mesCurto, letrasSemana,
-  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124223216";
-import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124223216";
-import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124223216";
+  treinosDoDia, podeRegistrar, registrar, removerTreino, metasAtivas, salvarMeta, excluirMeta } from "./dados.js?v=20261124223713";
+import { situacao, entrar, criarConta, sair, sincroniza, aoMudar, iniciaSync } from "./sync.js?v=20261124223713";
+import { resumo, linhaStatus, serieRealIdeal, sequencia, faixa, MARCOS, totalTreinos, totalBonus, dataDoMarco, recordes, feitosNaMeta, gradMarco } from "./calculo.js?v=20261124223713";
 
 const app = document.getElementById("app");
 const camada = document.getElementById("camada");
@@ -781,7 +781,7 @@ function telaEntrada() {
   const criar = modoEntrada === "criar"; const s = situacao();
   const aviso = s.erro && /sessão expirou/i.test(s.erro) ? s.erro : "";
   return `<section class="entrada">
-    <img class="entrada-logo" src="icons/logo.png" alt="">
+    <div class="lg-pts aceso entrada-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i class="r"></i><i class="v"></i></div>
     <h1 class="entrada-titulo">NoSkip</h1>
     <p class="entrada-sub">${criar ? "Crie sua conta para começar." : "Entre na sua conta para continuar."}</p>
     <form class="card entrada-card" novalidate>
@@ -854,7 +854,7 @@ render();
   const sp = document.getElementById("splash"); if (!sp) return;
   const espera = Math.max(0, 1450 - performance.now());
   setTimeout(() => {
-    const alvo = app.querySelector(".entrada-logo"), lg = sp.querySelector(".sp-logo"), g = sp.querySelector(".sp-grupo");
+    const alvo = app.querySelector(".entrada-logo"), lg = sp.querySelector(".lg-pts"), g = sp.querySelector(".sp-grupo");
     if (!alvo || !lg || reduzir) { sp.classList.add("sai"); setTimeout(() => sp.remove(), 500); return; }
     const a = lg.getBoundingClientRect(), b = alvo.getBoundingClientRect();
     const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = b.top - a.top;
